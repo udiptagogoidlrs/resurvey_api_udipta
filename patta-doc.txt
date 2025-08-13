@@ -1,0 +1,154 @@
+ <h1>DB CHANGES</h1> 
+
+ <h4>1. FIELDS CHANGE ON EXISTING TABLES</h4> 
+ 
+ (a) gender, occupation_id cols added to settlement_nominee table
+ 
+ (b) lm_note,co_note added to nc_villages
+
+ (17-10-2023)
+ (c) co_certification,dc_certification,sign_key added to nc_villages
+ 
+ <h4>2. NEW TABLES CREATED</h4> 
+ 
+ (a) nc_villages
+ 
+ (b) nc_village_dags
+
+
+04.11.2023
+depart_verified, depart_verified_at, depart_note added in nc_villages table
+
+06.11.2023
+dlr_verified, dlr_verified_at, dlr_note added in nc_villages table
+
+
+<h1>TABLE EXPLANATION</h1> 
+
+<h4>1. nc_villages table status col explanation</h4> 
+
+(a) E - Village record entered into nc_villages table but not forwarded to CO (at LM level)
+
+-------SK status (12th March 2024)-------
+S - Village Forwarded to SK
+T - Village reverted to SK from CO (wrong)
+T - Village forwarded to CO from SK
+U - Village reverted to LM from SK
+
+----End SK Status (12th March 2024)------
+(b) F - Village forwarded to CO
+(b.1) O - village verified by co not sent proposal yet
+(c) G - Village forwarded to DC
+
+(d) H- Village reverted to SK from CO
+
+
+(d.2) K - dc verify but not sent proposal yet
+(e) I- Village forwarded to DLR from dc
+
+(f) J- Village reverted to CO from DC
+
+(d.1) L- village verified by dlr has not yet been sent proposal
+(e.1) M - Village name changed by DC and forwarded to JDS
+(e.2) N - Village name changed FROM  DC forwarded to ADS FROM JDS
+(e.3) Q - Village name changed FROM  DC forwarded to JDS FROM ADS after map reploaded
+(f.1) P - Village name changed by DLR and forwarded to JDS (delete)
+	P -	Village forward to JDS from dlr due to area issue. and need to be merge (new)
+
+(11) B- Village reverted to DC from DLR (deleted)
+(12) C- Village Department Verified
+(13) D- Village reverted to DLR from Department
+(14) E - Village JS verified - (might deleted)
+
+(15) a - (Small 'a') - Section Officer processes village to 2nd proceeding from 1st proceeding
+(16) b - (Small 'b') - Section Officier forwarded proposal to Assistant Section Officer
+(16) c - (Small 'c') - Assistant Section Officer processes village to 2nd proceeding from 1st proceeding
+(16) d - (Small 'd') - Assistant Section Officier Made Proposal
+(17) e - (Small 'e') - Section Officier Reverted village to DLR
+(18) f - (Small 'f') - JDS revert back to DC after name change/reupload map
+(19) g - (Small 'g') - JDS sends to DLR for case dissmisal (to delete nc_process data of that village)
+(20) h - (Small 'h') - JDS sends the village to CO for chitha/map or both correction
+
+
+#PROPOSAL
+(10) A- Village DLR Verified and proposal send
+(d.2) B - dlr forward to ADLR
+(d.2) E - ADLR revert back to DLR
+(d.3) C - ADLR forward to JDS
+(d.4) D - JDS revert back to ADLR
+(d.4) R - DLR revert to dc
+(d.5) a - (Small 'a') Section Officer, generate the proposal and send
+(d.5) b - (Small 'b') Assistant Section Officer, generate the proposal
+
+
+
+
+
+1. first step same
+2. second step - remove case no generation, remove remark
+3. remove remark - step 3
+
+
+#DR
+1. nc_villages Table Added new column
+->chitha_dir_path
+->map_dir_path
+->dc_chitha_sign
+->dc_map_sign
+
+05.01.2024
+dlr_user_code (varchar 30)
+depart_user_code (varchar 30)
+
+2.
+
+chitha_rmk_encro
+1. encro_name_as (varchar 100)
+2. encro_guardian_as (varchar 100)
+3. updated_by (varchar 5)
+
+constants
+define('TRANSLATE_API', 'http://103.158.205.49');
+
+
+12th March 2024
+nc_villages Table Added new column
+->sk_verified (varchar 1)
+->sk_verified_at (timestamp w/o timezone)
+->sk_note (text)
+->sk_user_code (varchar 30)
+
+nc_village_dags Table Added new column
+->sk_verified (varchar 1)
+->sk_verified_at (timestamp w/o timezone)
+
+
+30/03/24
+nc_villages table added cols 
+jds_verified
+jds_verified_at
+jds_note
+jds_user_code
+
+ads_user_code
+
+
+
+## MAPS FLOW FLAG code
+table maps:
+1.default A - uploaded by ads
+2.F - Jds forwards to CO
+3.B - Co forwards to LM
+4.C - LM Forwards to SK
+5.D - DC Signs Map
+6.E - ADS Reuploads Map on Name Change request and Forwards to JDS
+7.X - Pullback by JDS
+8.G - JDS reuploads the maps and forwards to DC to sign again
+
+06/05/2024
+chitha_total_dag
+chitha_total_area_skm
+bhunaksa_total_dag
+bhunaksa_total_area_skm
+
+define('LANDHUB_BASE_URL_NEW', 'https://landhub.assam.gov.in/api/index.php/');
