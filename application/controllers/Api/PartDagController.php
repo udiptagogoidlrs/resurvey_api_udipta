@@ -1266,4 +1266,286 @@ class PartDagController extends CI_Controller
         return;
 
     }
+
+    public function deletePartDag() {
+        $this->load->helper('cookie');
+        $authToken = $this->input->cookie('jwt_authorization', TRUE);
+        $payload = jwtdecode($authToken);
+
+        header('Content-Type: application/json');
+        if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
+            $data = json_decode(file_get_contents('php://input', true));
+            $msg = null;
+            if(empty($payload))
+                $msg = "Unauthorized Token,";
+            if (!isset($data) || $data == null)
+                $msg = $msg . " Missing Parameters, ";
+            if (!isset($data->api_key) || $data->api_key == null)
+                $msg = $msg . " Missing api_key, ";
+            if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
+                $msg = $msg . " Missing Village Code, ";
+            if (!isset($data->dag_no) || $data->dag_no == null)
+                $msg = $msg . " Missing Original Dag no, ";
+            if (!isset($data->part_dag) || $data->part_dag == null)
+                $msg = $msg . " Missing Part Dag no, ";
+            if ($msg != null && !empty($msg)) {
+                $response = [
+                    'status' => 'n',
+                    'msg' => $msg 
+                ];
+                $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                exit;
+            }
+
+            $apikey = $data->api_key;
+            $villageCode = $data->vill_townprt_code;
+            $original_dag_no = $data->dag_no;
+            $part_dag = $data->part_dag;
+
+        } else {
+            $msg = null;
+            if(empty($payload))
+                $msg = "Unauthorized Token,";
+            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
+                $msg = $msg . " Missing apikey,";
+            if(!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
+                $msg = $msg . " Missing Village Code,";
+            if(!isset($_POST['dag_no']) || empty($_POST['dag_no']))
+                $msg = $msg . " Missing Original Dag No ";
+             if(!isset($_POST['part_dag']) || empty($_POST['part_dag']))
+                $msg = $msg . " Missing Part Dag No ";
+            if ($msg != null && !empty($msg)) {
+                $response = [
+                    'status' => 'n',
+                    'msg' => $msg 
+                ];
+                $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                return;
+            }
+
+            $apikey = $_POST['api_key'];
+            $villageCode = $_POST['vill_townprt_code'];
+            $original_dag_no = $_POST['dag_no'];
+            $part_dag = $_POST['part_dag'];
+        }
+
+        $villageCodeArr = explode('-',  $villageCode);
+        $dist_code = $villageCodeArr[0];
+        $subdiv_code = $villageCodeArr[1];
+        $cir_code = $villageCodeArr[2];
+        $mouza_pargona_code = $villageCodeArr[3];
+        $lot_no = $villageCodeArr[4];
+        $vill_townprt_code = $villageCodeArr[5];
+
+        $this->dbswitch($dist_code);
+
+        $checkPartDag = $this->db->query("SELECT * FROM chitha_basic_splitted_dags WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND survey_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $original_dag_no, $part_dag])->row();
+        $checkPartDagChitha = $this->db->query("SELECT * FROM chitha_basic WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $part_dag])->row();
+
+        if(empty($checkPartDag) || empty($checkPartDagChitha)) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Could not be deleted as Part dag could not be found!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        $partDagBigha = $checkPartDag->dag_area_b;
+        $partDagKatha = $checkPartDag->dag_area_k;
+        $partDagLessaChatak = $checkPartDag->dag_area_lc;
+        $partDagGanda = $checkPartDag->dag_area_g;
+
+        if(in_array($dist_code, BARAK_VALLEY)) {
+            $partDagTotalArea = $partDagBigha * 6400 + $partDagKatha * 320 + $partDagLessaChatak * 20 + $partDagGanda;
+        }
+        else {
+            $partDagTotalArea = $partDagBigha * 100 + $partDagKatha * 20 + $partDagLessaChatak;
+        }
+
+        $this->db->trans_begin();
+        $deleteSplit = [
+            'dist_code' => $dist_code,
+            'subdiv_code' => $subdiv_code,
+            'cir_code' => $cir_code,
+            'mouza_pargona_code' => $mouza_pargona_code,
+            'lot_no' => $lot_no,
+            'vill_townprt_code' => $vill_townprt_code,
+            'dag_no' => $original_dag_no,
+            'survey_no' => $part_dag
+        ];
+        $deleteSplitStatus = $this->db->delete('chitha_basic_splitted_dags', $deleteSplit);
+        if(!$deleteSplitStatus || $this->db->affected_rows() < 1) {
+            log_message('error', 'Part dag could not be deleted from chitha_basic_splitted_dags for ' . $part_dag);
+            $this->db->trans_rollback();
+             $response = [
+                'status' => 'n',
+                'msg' => 'Part dag could not be deleted!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        $deleteChithaArr = [
+            'dist_code' => $dist_code,
+            'subdiv_code' => $subdiv_code,
+            'cir_code' => $cir_code,
+            'mouza_pargona_code' => $mouza_pargona_code,
+            'lot_no' => $lot_no,
+            'vill_townprt_code' => $vill_townprt_code,
+            'dag_no' => $part_dag,
+        ];
+        $deleteChithaStatus = $this->db->delete('chitha_basic', $deleteChithaArr);
+        if(!$deleteChithaStatus || $this->db->affected_rows() < 1) {
+            log_message('error', 'Part dag could not be deleted from chitha_basic for ' . $part_dag);
+            $this->db->trans_rollback();
+            $response = [
+                'status' => 'n',
+                'msg' => 'Part dag could not be deleted!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        //delete pattadars if any of part dag
+        $pattadars = $this->db->query("SELECT * FROM chitha_dag_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $part_dag])->result();
+
+        if(!empty($pattadars)) {
+            $deletePattadarArr = [
+                'dist_code' => $dist_code,
+                'subdiv_code' => $subdiv_code,
+                'cir_code' => $cir_code,
+                'mouza_pargona_code' => $mouza_pargona_code,
+                'lot_no' => $lot_no,
+                'vill_townprt_code' => $vill_townprt_code,
+                'dag_no' => $part_dag
+            ];
+            $deletePdarStatus = $this->db->delete('chitha_dag_pattadar', $deletePattadarArr);
+            if(!$deletePdarStatus || $this->db->affected_rows() < 1) {
+                log_message('error', 'Part dag Pattadars could not be deleted from chitha_dag_pattadar for ' . $part_dag);
+                $this->db->trans_rollback();
+                $response = [
+                    'status' => 'n',
+                    'msg' => 'Part dag Pattadars could not be deleted!'
+                ];
+                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                return;
+            }
+        }
+
+        //delete Possessors if any for part dag
+        $possessors = $this->db->query("SELECT * FROM splitted_dags_possessors WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND old_dag_no=? AND part_dag=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $original_dag_no, $part_dag])->result();
+
+        if(!empty($possessors)) {
+            $deletePossessorArr = [
+                'dist_code' => $dist_code,
+                'subdiv_code' => $subdiv_code,
+                'cir_code' => $cir_code,
+                'mouza_pargona_code' => $mouza_pargona_code,
+                'lot_no' => $lot_no,
+                'vill_townprt_code' => $vill_townprt_code,
+                'old_dag_no' => $original_dag_no,
+                'part_dag' => $part_dag
+            ];
+            $deletePossessorStatus = $this->db->delete('splitted_dags_possessors', $deletePossessorArr);
+            if(!$deletePossessorStatus || $this->db->affected_rows() < 1) {
+                log_message('error', 'Part dag Possessors could not be deleted from splitted_dags_possessors for ' . $part_dag);
+                $this->db->trans_rollback();
+                $response = [
+                    'status' => 'n',
+                    'msg' => 'Part dag Possessors could not be deleted!'
+                ];
+                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                return;
+            }
+        }
+
+        //original area update
+        $checkOriginalDagChitha = $this->db->query("SELECT * FROM chitha_basic WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $original_dag_no])->row();
+
+        $originalBigha = $checkOriginalDagChitha->dag_area_b;
+        $originalKatha = $checkOriginalDagChitha->dag_area_k;
+        $originalLessaChatak = $checkOriginalDagChitha->dag_area_lc;
+        $originalGanda = $checkOriginalDagChitha->dag_area_g;
+
+        if(in_array($dist_code, BARAK_VALLEY)) {
+            $originalDagTotalArea = $originalBigha * 6400 + $originalKatha * 320 + $originalLessaChatak * 20 + $originalGanda;
+        }
+        else {
+            $originalDagTotalArea = $originalBigha * 100 + $originalKatha * 20 + $originalLessaChatak;
+        }
+
+        $totalArea = $originalDagTotalArea + $partDagTotalArea;
+
+        if(in_array($dist_code, BARAK_VALLEY)) {
+            $bigha = floor($totalArea/6400);
+            $katha = floor(($totalArea - ($bigha * 6400))/320);
+            $lessaChatak = floor(($totalArea - ($bigha * 6400 + $katha * 320))/20);
+            $ganda = number_format($totalArea - ($bigha * 6400 + $katha * 320 + $lessaChatak * 20), 4);
+        }
+        else {
+            $bigha = floor($totalArea/100);
+            $katha = floor(($totalArea - ($bigha * 100))/20);
+            $lessaChatak = $totalArea - ($bigha * 100 + $katha * 20);
+            $ganda = '0';
+        }
+
+        $updOriginalChithaArr = [
+            'dag_area_b' => $bigha,
+            'dag_area_k' => $katha,
+            'dag_area_lc' => $lessaChatak,
+            'dag_area_g' => $ganda
+        ];
+        $this->db->where([
+            'dist_code' => $dist_code,
+            'subdiv_code' => $subdiv_code,
+            'cir_code' => $cir_code,
+            'mouza_pargona_code' => $mouza_pargona_code,
+            'lot_no' => $lot_no,
+            'vill_townprt_code' => $vill_townprt_code,
+            'dag_no' => $original_dag_no
+        ]);
+        $updOriginalChithaStatus = $this->db->update('chitha_basic', $updOriginalChithaArr);
+        if(!$updOriginalChithaStatus || $this->db->affected_rows() < 1) {
+            log_message('error', 'Original dag: ' . $original_dag_no . ' updated successfully!');
+            $this->db->trans_rollback();
+            $response = [
+                'status' => 'n',
+                'msg' => 'Original Dag Area Updation Failed!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        if(!$this->db->trans_status()) {
+            log_message('error', 'DB Transaction Failed!');
+            $this->db->trans_rollback();
+            $response = [
+                'status' => 'n',
+                'msg' => 'DB Transaction Failed!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+
+        $this->db->trans_commit();
+
+        $response = [
+            'status' => 'y',
+            'msg' => 'Successfully deleted Part Dag!'
+        ];
+        $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
+        echo json_encode($response);
+        return;
+    }
 }

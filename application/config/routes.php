@@ -68,6 +68,7 @@ $route['get_tenants'] = 'Api/PartDagController/getTenants';
 $route['submit_possessor'] = 'Api/PartDagController/submitPossessor';
 $route['delete_possessor'] = 'Api/PartDagController/deletePossessor';
 $route['update_part_dag'] = 'Api/PartDagController/updatePartDag';
+$route['delete_part_dag'] = 'Api/PartDagController/deletePartDag';
 
 // // Jamabandi
 // $route['set-location-for-jamabandi'] = 'JamabandiController/setJamabandiLocation';
