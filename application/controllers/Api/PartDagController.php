@@ -734,6 +734,18 @@ class PartDagController extends CI_Controller
 
         $this->dbswitch($dist_code);
 
+        $checkPartDag = $this->db->query('SELECT survey_no FROM chitha_basic_splitted_dags WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND survey_no=?', [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $original_dag_no, $part_dag])->row();
+        $checkChitha = $this->db->query('SELECT dag_no FROM chitha_basic WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?', [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $part_dag])->row();
+        if(empty($checkPartDag) || empty($checkChitha)) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Part Dag is not available yet!' 
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
         $max_possessor_id = $this->db->query("SELECT MAX(possessor_id) as possessor_id_max FROM splitted_dags_possessors WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND old_dag_no=? AND part_dag=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $original_dag_no, $part_dag])->row()->possessor_id_max;
 
         if(!$max_possessor_id || empty($max_possessor_id)) {
