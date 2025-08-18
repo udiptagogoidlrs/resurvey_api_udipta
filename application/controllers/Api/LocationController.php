@@ -821,16 +821,20 @@ class LocationController extends CI_Controller
             log_message("error", 'LAND HUB API FAIL');
             $response = [
                 'status' => 'n',
-                'msg' => 'API Failed!' 
+                'msg' => 'Bhunaksa API PartDags Failed!' 
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
-            echo json_encode($response);
-            return;
+            $partDags = [];
+            $locationCode = '';
+            $inputOldDagNo = '';
+
+        }else{
+            $partDags = $api_output['data']->partDags;
+            $locationCode = $api_output['data']->locationCode;
+            $inputOldDagNo = $api_output['data']->inputOldDagNo;
+
         }
 
-        $partDags = $api_output['data']->partDags;
-        $locationCode = $api_output['data']->locationCode;
-        $inputOldDagNo = $api_output['data']->inputOldDagNo;
 
 
         $partDagsForEntry = [];
@@ -844,8 +848,8 @@ class LocationController extends CI_Controller
                 $dag_area_sqmtr = $partDag->plotArea;
                 $from_bhunaksha = 1;
                 //check in chitha whether created
-                $chithaPartDag = $this->db->query("SELECT cbsd.*, lc.land_type, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
-                LEFT JOIN landclass_code lc ON cbsd.land_class_code = lc.class_code
+                $chithaPartDag = $this->db->query("SELECT cbsd.*, lcg.name as land_class_name, lcg.name_ass as land_class_name_ass, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
+                LEFT JOIN land_class_groups lcg ON cbsd.land_class_code = lcg.land_class_code
                 LEFT JOIN patta_code pc ON cbsd.patta_type_code = pc.type_code
                 WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND survey_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $part_dag])->row();
 
@@ -862,7 +866,8 @@ class LocationController extends CI_Controller
                 $row['from_bhunaksha'] = $from_bhunaksha;
                 $row['dag_area_sqmtr'] = $dag_area_sqmtr;
                 $row['old_dag_no'] = $chithaPartDag ? $chithaPartDag->dag_no : '';
-                $row['current_land_class'] = $chithaPartDag->land_type ?? '';
+                $row['current_land_class'] = $chithaPartDag->land_class_name ?? '';
+                $row['current_land_class_ass'] = $chithaPartDag->land_class_name_ass ?? '';
                 $row['patta_type'] = $chithaPartDag->patta_type ?? '';
                 $row['patta_no'] = $chithaPartDag->patta_no ?? '';
 
@@ -871,8 +876,8 @@ class LocationController extends CI_Controller
             }
         }
 
-        $addedPartDags = $this->db->query("SELECT cbsd.*, lc.land_type, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
-                LEFT JOIN landclass_code lc ON cbsd.land_class_code = lc.class_code
+        $addedPartDags = $this->db->query("SELECT cbsd.*, lcg.name as land_class_name, lcg.name_ass as land_class_name_ass, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
+                LEFT JOIN land_class_groups lcg ON cbsd.land_class_code = lcg.land_class_code
                 LEFT JOIN patta_code pc ON cbsd.patta_type_code = pc.type_code WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no])->result();
 
         if(!empty($addedPartDags)) {
@@ -885,7 +890,8 @@ class LocationController extends CI_Controller
                     $row['from_bhunaksha'] = 0;
                     $row['dag_area_sqmtr'] = $addedPartDag->dag_area_sqmtr;
                     $row['old_dag_no'] = $addedPartDag ? $addedPartDag->dag_no : '';
-                    $row['current_land_class'] = $addedPartDag->land_type ?? '';
+                    $row['current_land_class'] = $addedPartDag->land_class_name ?? '';
+                    $row['current_land_class_ass'] = $addedPartDag->land_class_name_ass ?? '';
                     $row['patta_type'] = $addedPartDag->patta_type ?? '';
                     $row['patta_no'] = $addedPartDag->patta_no ?? '';
 
@@ -906,7 +912,7 @@ class LocationController extends CI_Controller
             log_message("error", 'LAND HUB API FAIL');
             $response = [
                 'status' => 'n',
-                'msg' => 'API Failed!' 
+                'msg' => 'getLandClassesAndPattaTypes API Failed!' 
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -959,6 +965,7 @@ class LocationController extends CI_Controller
         $resp['part_dags'] = $partDagsForEntry;
         $resp['land_classes'] = $landClassesAndPattaTypes->data->land_classes;
         $resp['patta_types'] = $landClassesAndPattaTypes->data->patta_types;
+        $resp['land_groups'] = $landClassesAndPattaTypes->data->land_groups;
         $resp['pattadars'] = $pdarArray;
 
 
