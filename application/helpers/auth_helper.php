@@ -15,6 +15,15 @@
         $decodedToken = JWT::decode($jwt_token, JWT_SECRET_KEY, ['HS256']);
         return $decodedToken;
     }
-
+    function jwtVerify($jwt_token) {
+        $decoded = jwtdecode($jwt_token);
+        if(!$decoded){
+            $this->output
+                ->set_status_header(401)
+                ->set_output(json_encode(['error' => 'Invalid or expired token']));
+            exit;
+        }
+        return $decoded;
+    }
 
 ?>

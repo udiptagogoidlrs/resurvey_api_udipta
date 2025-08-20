@@ -609,7 +609,6 @@ function callApiV2($url,$method, $data=null)
     ));
 
     $response = curl_exec($curl);
-
     $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
     curl_close($curl);
