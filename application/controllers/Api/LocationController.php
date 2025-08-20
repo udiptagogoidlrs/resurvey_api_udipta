@@ -209,7 +209,7 @@ class LocationController extends CI_Controller
         $cir_code = $cirCodeArr[2];
 
         $data = [];
-        $url = LANDHUB_BASE_URL . "/getMouzas";
+        $url = LANDHUB_BASE_URL . "/NicApi/getMouzas";
         $method = 'POST';
         $data['dist_code'] = $dist_code;
         $data['subdiv_code'] = $subdiv_code;
@@ -320,7 +320,7 @@ class LocationController extends CI_Controller
         $mouza_pargona_code = $mouzaCodeArr[3];
 
         $data = [];
-        $url = LANDHUB_BASE_URL . "/getLots";
+        $url = LANDHUB_BASE_URL . "/NicApi/getLots";
         $method = 'POST';
         $data['dist_code'] = $dist_code;
         $data['subdiv_code'] = $subdiv_code;
@@ -433,7 +433,7 @@ class LocationController extends CI_Controller
         $lot_no = $lotNoArr[4];
 
         $data = [];
-        $url = LANDHUB_BASE_URL . "/getVillages";
+        $url = LANDHUB_BASE_URL . "/NicApi/getVillages";
         $method = 'POST';
         $data['dist_code'] = $dist_code;
         $data['subdiv_code'] = $subdiv_code;
@@ -654,7 +654,7 @@ class LocationController extends CI_Controller
             }
         }
         $data = [];
-        $url = LANDHUB_BASE_URL . "/getDagsForChithaReservey";
+        $url = LANDHUB_BASE_URL . "/NicApi/getDagsForChithaReservey";
         $method = 'POST';
         $data['dist_code'] = $dist_code;
         $data['subdiv_code'] = $subdiv_code;
@@ -705,7 +705,7 @@ class LocationController extends CI_Controller
     public function getDagData() {
         $this->load->helper('cookie');
         $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        jwtVerify($authToken);
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
@@ -758,8 +758,6 @@ class LocationController extends CI_Controller
             $apikey = $_POST['apikey'];
             $villageCode = $_POST['vill_townprt_code'];
             $dagNo = $_POST['dag_no'];
-            // $user_name = $_POST['user_name'];
-            // $password = $_POST['password'];
         }
 
         $locationArr = explode('-', $villageCode);
@@ -902,7 +900,7 @@ class LocationController extends CI_Controller
 
         //retrieve Land Classes and Patta types
         $data = [];
-        $url = LANDHUB_BASE_URL . "/getLandClassesAndPattaTypes";
+        $url = LANDHUB_BASE_URL . "/NicApi/getLandClassesAndPattaTypes";
         $method = 'POST';
         $data['dist_code'] = $dist_code;
         $data['apikey'] = "chithaentry_resurvey";
@@ -933,6 +931,11 @@ class LocationController extends CI_Controller
             return;
         }
 
+
+
+
+
+        
         // pattadars
         $pattadars = $this->db->query("SELECT cdp.*, cp.pdar_name, cp.pdar_father,cp.pdar_add1,cp.pdar_add2 FROM chitha_dag_pattadar cdp, chitha_pattadar cp WHERE cdp.dist_code=cp.dist_code AND cdp.subdiv_code=cp.subdiv_code AND cdp.cir_code=cp.cir_code AND cdp.mouza_pargona_code=cp.mouza_pargona_code AND cdp.lot_no=cp.lot_no AND cdp.vill_townprt_code=cp.vill_townprt_code AND cdp.patta_no=cp.patta_no AND cdp.patta_type_code=cp.patta_type_code AND cdp.pdar_id=cp.pdar_id AND cdp.dist_code=? AND cdp.subdiv_code=? AND cdp.cir_code=? AND cdp.mouza_pargona_code=? AND cdp.lot_no=? AND cdp.vill_townprt_code=? AND cdp.dag_no=? AND cdp.patta_no=? AND cdp.patta_type_code=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $originalDagForEntry->patta_no, $originalDagForEntry->patta_type_code])->result();
 
@@ -1001,7 +1004,7 @@ class LocationController extends CI_Controller
             $eq_bigha = $bigha + ($katha / 5) + ($lessaChatak / 100);
         }
 
-        $url = LANDHUB_BASE_URL . "/getRevenueLandClassCodeWise";
+        $url = LANDHUB_BASE_URL . "/NicApi/getRevenueLandClassCodeWise";
         $method = 'POST';
         $data['apikey'] = "chithaentry_resurvey";
         $api_output = callApiV2($url, $method, $data);
@@ -1200,7 +1203,7 @@ class LocationController extends CI_Controller
 
         //if not available then search in bhunaksha
         $data = [];
-        $url = "/PartDags";
+        $url = "/NicApi/PartDags";
         $method = 'POST';
         $data['locationCode'] = $dist_code . '_' . $subdiv_code . '_' . $cir_code . '_' . $mouza_pargona_code . '_' . $lot_no . '_' . $vill_townprt_code;
         $data['oldDagNo'] = $dag_no;
@@ -1385,7 +1388,7 @@ class LocationController extends CI_Controller
 
             // $this->load->model('NcVillageModel');
         $data = [];
-        $url = LANDHUB_BASE_URL . "/getRevenueLandClassCodeWise";
+        $url = LANDHUB_BASE_URL . "/NicApi/getRevenueLandClassCodeWise";
         $method = 'POST';
         $data['dist_code'] = $dist_code;
         $data['subdiv_code'] = $subdiv_code;
