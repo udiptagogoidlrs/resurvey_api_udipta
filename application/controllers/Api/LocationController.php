@@ -5,59 +5,57 @@ include APPPATH . '/libraries/CommonTrait.php';
 class LocationController extends CI_Controller
 {
     use CommonTrait;
+    private $jwt_data;
     public function __construct()
     {
         parent::__construct();
-        // $this->load->model('LoginModel');
-        // $this->load->model('UserModel');
-        // $this->load->helper('security');
+        $auth = validate_jwt();
+        if (!$auth['status']) {
+            $this->output
+                 ->set_status_header(401)
+                 ->set_content_type('application/json')
+                 ->set_output(json_encode(['error' => $auth['message']]))
+                 ->_display();
+            exit;
+        }
+
+        $this->jwt_data = $auth['data'];
     }
 
 
 
-    public function getDistricts() {
+    public function getDistricts()
+    {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
-
-            $apikey = $data->api_key;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            $apikey = $_POST['apikey'];
             // $user_name = $_POST['user_name'];
             // $password = $_POST['password'];
         }
@@ -76,55 +74,49 @@ class LocationController extends CI_Controller
         return;
     }
 
-    public function getCircles() {
+    public function getCircles()
+    {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if (!isset($data->dist_code) || $data->dist_code == null)
                 $msg = $msg . " Missing District Code";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
 
-            $apikey = $data->api_key;
+
             $dist_code = $data->dist_code;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
-            if(!isset($_POST['dist_code']) || empty($_POST['dist_code']))
+            
+            
+            if (!isset($_POST['dist_code']) || empty($_POST['dist_code']))
                 $msg = $msg . " Missing dist code";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            $apikey = $_POST['apikey'];
-             $dist_code = $_POST['dist_code'];
+
+            $dist_code = $_POST['dist_code'];
             // $user_name = $_POST['user_name'];
             // $password = $_POST['password'];
         }
@@ -145,64 +137,58 @@ class LocationController extends CI_Controller
         return;
     }
 
-    public function getMouzas() {
+    public function getMouzas()
+    {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if (!isset($data->cir_code) || $data->cir_code == null)
                 $msg = $msg . " Missing Circle Code";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
 
-            $apikey = $data->api_key;
+
             $cirCode = $data->cir_code;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
-            if(!isset($_POST['cir_code']) || empty($_POST['cir_code']))
+            
+            
+            if (!isset($_POST['cir_code']) || empty($_POST['cir_code']))
                 $msg = $msg . " Missing Circle code";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            $apikey = $_POST['apikey'];
+
             $cirCode = $_POST['cir_code'];
             // $user_name = $_POST['user_name'];
             // $password = $_POST['password'];
         }
 
-        
+
 
         $cirCodeArr = explode('-', $cirCode);
 
-        
+
 
         $dist_code = $cirCodeArr[0];
         $subdiv_code = $cirCodeArr[1];
@@ -215,26 +201,26 @@ class LocationController extends CI_Controller
         $data['subdiv_code'] = $subdiv_code;
         $data['cir_code'] = $cir_code;
         $data['apikey'] = "chithaentry_resurvey";
-        
+
         $api_output = callApiV2($url, $method, $data);
 
         if (!$api_output) {
             log_message("error", 'LAND HUB API FAIL LMController');
             $response = [
                 'status' => 'n',
-                'msg' => 'API Failed!' 
+                'msg' => 'API Failed!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
             return;
         }
         $mouzas = json_decode($api_output);
-        
 
-        if(!isset($mouzas->data) || empty($mouzas->data)) {
-             $response = [
+
+        if (!isset($mouzas->data) || empty($mouzas->data)) {
+            $response = [
                 'status' => 'n',
-                'msg' => 'No data Found!' 
+                'msg' => 'No data Found!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -259,54 +245,48 @@ class LocationController extends CI_Controller
         return;
     }
 
-    public function getLots() {
+    public function getLots()
+    {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if (!isset($data->mouza_pargona_code) || $data->mouza_pargona_code == null)
                 $msg = $msg . " Missing Mouza Code";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
 
-            $apikey = $data->api_key;
+
             $mouzaCode = $data->mouza_pargona_code;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
-            if(!isset($_POST['mouza_pargona_code']) || empty($_POST['mouza_pargona_code']))
+            
+            
+            if (!isset($_POST['mouza_pargona_code']) || empty($_POST['mouza_pargona_code']))
                 $msg = $msg . " Missing Mouza code";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            $apikey = $_POST['apikey'];
+
             $mouzaCode = $_POST['mouza_pargona_code'];
             // $user_name = $_POST['user_name'];
             // $password = $_POST['password'];
@@ -327,7 +307,7 @@ class LocationController extends CI_Controller
         $data['cir_code'] = $cir_code;
         $data['mouza_pargona_code'] = $mouza_pargona_code;
         $data['apikey'] = "chithaentry_resurvey";
-        
+
         $api_output = callApiV2($url, $method, $data);
 
         if (!$api_output) {
@@ -335,7 +315,7 @@ class LocationController extends CI_Controller
 
             $response = [
                 'status' => 'n',
-                'msg' => 'API Failed!' 
+                'msg' => 'API Failed!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -343,10 +323,10 @@ class LocationController extends CI_Controller
         }
         $lots = json_decode($api_output);
 
-        if(!isset($lots->data) || empty($lots->data)) {
-             $response = [
+        if (!isset($lots->data) || empty($lots->data)) {
+            $response = [
                 'status' => 'n',
-                'msg' => 'No data Found!' 
+                'msg' => 'No data Found!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -371,54 +351,48 @@ class LocationController extends CI_Controller
         return;
     }
 
-    public function getVills() {
+    public function getVills()
+    {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if (!isset($data->lot_no) || $data->lot_no == null)
                 $msg = $msg . " Missing Lot No";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
 
-            $apikey = $data->api_key;
+
             $lotNo = $data->lot_no;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
-            if(!isset($_POST['lot_no']) || empty($_POST['lot_no']))
+            
+            
+            if (!isset($_POST['lot_no']) || empty($_POST['lot_no']))
                 $msg = $msg . " Missing Lot No";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            $apikey = $_POST['apikey'];
+
             $lotNo = $_POST['lot_no'];
             // $user_name = $_POST['user_name'];
             // $password = $_POST['password'];
@@ -441,14 +415,14 @@ class LocationController extends CI_Controller
         $data['mouza_pargona_code'] = $mouza_pargona_code;
         $data['lot_no'] = $lot_no;
         $data['apikey'] = "chithaentry_resurvey";
-        
+
         $api_output = callApiV2($url, $method, $data);
 
         if (!$api_output) {
             log_message("error", 'LAND HUB API FAIL LMController');
             $response = [
                 'status' => 'n',
-                'msg' => 'API Failed!' 
+                'msg' => 'API Failed!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -456,10 +430,10 @@ class LocationController extends CI_Controller
         }
         $villages = json_decode($api_output);
 
-        if(!isset($villages->data) || empty($villages->data)) {
+        if (!isset($villages->data) || empty($villages->data)) {
             $response = [
                 'status' => 'n',
-                'msg' => 'No data Found!' 
+                'msg' => 'No data Found!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -485,54 +459,48 @@ class LocationController extends CI_Controller
         return;
     }
 
-    public function getDags() {
+    public function getDags()
+    {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
 
-            $apikey = $data->api_key;
+
             $villageCode = $data->vill_townprt_code;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
-            if(!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
+            
+            
+            if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            $apikey = $_POST['apikey'];
+
             $villageCode = $_POST['vill_townprt_code'];
             // $user_name = $_POST['user_name'];
             // $password = $_POST['password'];
@@ -548,18 +516,18 @@ class LocationController extends CI_Controller
         $vill_townprt_code = $villageCodeArr[5];
 
         $this->dbswitch($dist_code);
-        
+
 
         $checkMergingStatus = $this->db->query("SELECT is_merged FROM resurvey_villages WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code])->row();
-        if(empty($checkMergingStatus)) {
+        if (empty($checkMergingStatus)) {
             $this->db->trans_begin();
             //merge and update
             $mergeStatus = $this->mergeVillage($villageCode);
-            if($mergeStatus['status'] != 'y') {
+            if ($mergeStatus['status'] != 'y') {
                 $this->db->trans_rollback();
                 $response = [
                     'status' => 'n',
-                    'msg' => 'Could not sync dharitree data with chitha!' 
+                    'msg' => 'Could not sync dharitree data with chitha!'
                 ];
                 $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
@@ -575,27 +543,27 @@ class LocationController extends CI_Controller
                 'lot_no' => $lot_no,
                 'vill_townprt_code' => $vill_townprt_code,
                 'is_merged' => 1,
-                'user_code' => $payload->usercode,
+                'user_code' => $this->jwt_data->usercode,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ];
             $insertStatus = $this->db->insert('resurvey_villages', $insertArr);
-            if(!$insertStatus || $this->db->affected_rows() < 1) {
+            if (!$insertStatus || $this->db->affected_rows() < 1) {
                 $this->db->trans_rollback();
                 $response = [
                     'status' => 'n',
-                    'msg' => 'Could not update into resurvey villages!' 
+                    'msg' => 'Could not update into resurvey villages!'
                 ];
                 $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            if(!$this->db->trans_status()) {
+            if (!$this->db->trans_status()) {
                 $this->db->trans_rollback();
                 $response = [
                     'status' => 'n',
-                    'msg' => 'DB Transaction Failed...' 
+                    'msg' => 'DB Transaction Failed...'
                 ];
                 $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
@@ -603,16 +571,15 @@ class LocationController extends CI_Controller
             }
 
             $this->db->trans_commit();
-        }
-        else {
-            if($checkMergingStatus->is_merged != 1) {
+        } else {
+            if ($checkMergingStatus->is_merged != 1) {
                 $this->db->trans_begin();
                 $mergeStatus = $this->mergeVillage($villageCode);
-                if($mergeStatus['status'] != 'y') {
+                if ($mergeStatus['status'] != 'y') {
                     $this->db->trans_rollback();
                     $response = [
                         'status' => 'n',
-                        'msg' => 'Could not sync dharitree data with chitha!' 
+                        'msg' => 'Could not sync dharitree data with chitha!'
                     ];
                     $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                     echo json_encode($response);
@@ -630,21 +597,21 @@ class LocationController extends CI_Controller
                     'vill_townprt_code' => $vill_townprt_code
                 ]);
                 $updStatus = $this->db->update('resurvey_villages', $updArr);
-                if(!$updStatus || $this->db->affected_rows() < 1) {
+                if (!$updStatus || $this->db->affected_rows() < 1) {
                     $this->db->trans_rollback();
                     $response = [
                         'status' => 'n',
-                        'msg' => 'Could not update into resurvey villages!' 
+                        'msg' => 'Could not update into resurvey villages!'
                     ];
                     $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                     echo json_encode($response);
                     return;
                 }
-                if(!$this->db->trans_status()) {
+                if (!$this->db->trans_status()) {
                     $this->db->trans_rollback();
                     $response = [
                         'status' => 'n',
-                        'msg' => 'DB Transaction Failed...!' 
+                        'msg' => 'DB Transaction Failed...!'
                     ];
                     $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                     echo json_encode($response);
@@ -669,7 +636,7 @@ class LocationController extends CI_Controller
             log_message("error", 'LAND HUB API FAIL');
             $response = [
                 'status' => 'n',
-                'msg' => 'API Failed!' 
+                'msg' => 'API Failed!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -680,10 +647,10 @@ class LocationController extends CI_Controller
 
         $dags = json_decode($api_output);
 
-        if(!isset($dags->data) || empty($dags->data)) {
+        if (!isset($dags->data) || empty($dags->data)) {
             $response = [
                 'status' => 'n',
-                'msg' => 'No data Found!' 
+                'msg' => 'No data Found!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -692,7 +659,7 @@ class LocationController extends CI_Controller
 
         $payload = $dags->data;
 
-         $response = [
+        $response = [
             'status' => 'y',
             'msg' => 'Successfully retrieved data!',
             'data' => $payload
@@ -702,7 +669,8 @@ class LocationController extends CI_Controller
         return;
     }
 
-    public function getDagData() {
+    public function getDagData()
+    {
         $this->load->helper('cookie');
         $authToken = $this->input->cookie('jwt_authorization', TRUE);
         jwtVerify($authToken);
@@ -711,12 +679,10 @@ class LocationController extends CI_Controller
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -724,38 +690,35 @@ class LocationController extends CI_Controller
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
 
-            $apikey = $data->api_key;
+
             $villageCode = $data->vill_townprt_code;
             $dagNo = $data->dag_no;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
-            if(!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
+            
+            
+            if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
-            if(!isset($_POST['dag_no']) || empty($_POST['dag_no']))
+            if (!isset($_POST['dag_no']) || empty($_POST['dag_no']))
                 $msg = $msg . " Missing Dag No ";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            $apikey = $_POST['apikey'];
+
             $villageCode = $_POST['vill_townprt_code'];
             $dagNo = $_POST['dag_no'];
         }
@@ -788,19 +751,19 @@ class LocationController extends CI_Controller
             AND cb.vill_townprt_code = ?
             AND cb.dag_no = ?
         ", [
-            $dist_code, 
-            $subdiv_code, 
-            $cir_code, 
-            $mouza_pargona_code, 
-            $lot_no, 
-            $vill_townprt_code, 
+            $dist_code,
+            $subdiv_code,
+            $cir_code,
+            $mouza_pargona_code,
+            $lot_no,
+            $vill_townprt_code,
             $dag_no
         ])->row();
 
-        if(empty($originalDagForEntry)) {
+        if (empty($originalDagForEntry)) {
             $response = [
                 'status' => 'n',
-                'msg' => 'Dag not yet merged in Chitha' 
+                'msg' => 'Dag not yet merged in Chitha'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -819,18 +782,16 @@ class LocationController extends CI_Controller
             log_message("error", 'LAND HUB API FAIL');
             $response = [
                 'status' => 'n',
-                'msg' => 'Bhunaksa API PartDags Failed!' 
+                'msg' => 'Bhunaksa API PartDags Failed!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             $partDags = [];
             $locationCode = '';
             $inputOldDagNo = '';
-
-        }else{
+        } else {
             $partDags = $api_output['data']->partDags;
             $locationCode = $api_output['data']->locationCode;
             $inputOldDagNo = $api_output['data']->inputOldDagNo;
-
         }
 
 
@@ -838,10 +799,10 @@ class LocationController extends CI_Controller
         $partDagsForEntry = [];
         $checkPartDags = [];
 
-        
 
-        if(!empty($partDags)) {
-            foreach($partDags as $partDag) {
+
+        if (!empty($partDags)) {
+            foreach ($partDags as $partDag) {
                 $part_dag = $partDag->newDagNo;
                 $dag_area_sqmtr = $partDag->plotArea;
                 $from_bhunaksha = 1;
@@ -851,7 +812,7 @@ class LocationController extends CI_Controller
                 LEFT JOIN patta_code pc ON cbsd.patta_type_code = pc.type_code
                 WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND survey_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $part_dag])->row();
 
-                if(!empty($chithaPartDag)) {
+                if (!empty($chithaPartDag)) {
                     $dag_area_sqmtr = ($chithaPartDag->dag_area_sqmtr && $chithaPartDag->dag_area_sqmtr != '') ? $chithaPartDag->dag_area_sqmtr : $dag_area_sqmtr;
                     $from_bhunaksha = 0;
                 }
@@ -878,9 +839,9 @@ class LocationController extends CI_Controller
                 LEFT JOIN land_class_groups lcg ON cbsd.land_class_code = lcg.land_class_code
                 LEFT JOIN patta_code pc ON cbsd.patta_type_code = pc.type_code WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no])->result();
 
-        if(!empty($addedPartDags)) {
+        if (!empty($addedPartDags)) {
             foreach ($addedPartDags as $addedPartDag) {
-                if(!in_array(trim($addedPartDag->survey_no), $checkPartDags)) {
+                if (!in_array(trim($addedPartDag->survey_no), $checkPartDags)) {
                     $row = [];
                     $row['part_dag'] = $addedPartDag->survey_no;
                     $row['name'] = $addedPartDag->survey_no;
@@ -910,7 +871,7 @@ class LocationController extends CI_Controller
             log_message("error", 'LAND HUB API FAIL');
             $response = [
                 'status' => 'n',
-                'msg' => 'getLandClassesAndPattaTypes API Failed!' 
+                'msg' => 'getLandClassesAndPattaTypes API Failed!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -921,10 +882,10 @@ class LocationController extends CI_Controller
 
         $landClassesAndPattaTypes = json_decode($api_output);
 
-        if(!$landClassesAndPattaTypes->data || !$landClassesAndPattaTypes->data->land_classes || !$landClassesAndPattaTypes->data->patta_types) {
+        if (!$landClassesAndPattaTypes->data || !$landClassesAndPattaTypes->data->land_classes || !$landClassesAndPattaTypes->data->patta_types) {
             $response = [
                 'status' => 'n',
-                'msg' => 'Land Classes and PattaTypes could not be retrieved!' 
+                'msg' => 'Land Classes and PattaTypes could not be retrieved!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -935,13 +896,13 @@ class LocationController extends CI_Controller
 
 
 
-        
+
         // pattadars
         $pattadars = $this->db->query("SELECT cdp.*, cp.pdar_name, cp.pdar_father,cp.pdar_add1,cp.pdar_add2 FROM chitha_dag_pattadar cdp, chitha_pattadar cp WHERE cdp.dist_code=cp.dist_code AND cdp.subdiv_code=cp.subdiv_code AND cdp.cir_code=cp.cir_code AND cdp.mouza_pargona_code=cp.mouza_pargona_code AND cdp.lot_no=cp.lot_no AND cdp.vill_townprt_code=cp.vill_townprt_code AND cdp.patta_no=cp.patta_no AND cdp.patta_type_code=cp.patta_type_code AND cdp.pdar_id=cp.pdar_id AND cdp.dist_code=? AND cdp.subdiv_code=? AND cdp.cir_code=? AND cdp.mouza_pargona_code=? AND cdp.lot_no=? AND cdp.vill_townprt_code=? AND cdp.dag_no=? AND cdp.patta_no=? AND cdp.patta_type_code=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $originalDagForEntry->patta_no, $originalDagForEntry->patta_type_code])->result();
 
         $pdarArray = [];
 
-        if(!empty($pattadars)) {
+        if (!empty($pattadars)) {
             foreach ($pattadars as $pattadar) {
                 $value = $pattadar->dist_code . '-' . $pattadar->subdiv_code . '-' . $pattadar->cir_code . '-' . $pattadar->mouza_pargona_code . '-' . $pattadar->lot_no . '-' . $pattadar->vill_townprt_code . '-' . $pattadar->patta_no . '-' . $pattadar->patta_type_code . '-' . $pattadar->pdar_id;
                 $label = $pattadar->pdar_name . ' (' . $pattadar->pdar_father . ')';
@@ -957,8 +918,8 @@ class LocationController extends CI_Controller
             }
         }
 
-        $revenue_data = $this->calcLandRevenue($originalDagForEntry,$locationArr);
-        if($revenue_data){
+        $revenue_data = $this->calcLandRevenue($originalDagForEntry, $locationArr);
+        if ($revenue_data) {
             $originalDagForEntry->dag_revenue = $revenue_data->dag_revenue;
             $originalDagForEntry->dag_local_tax = $revenue_data->dag_local_tax;
         }
@@ -982,7 +943,8 @@ class LocationController extends CI_Controller
         return;
     }
 
-    private function calcLandRevenue($dag_data, $locationArr) {
+    private function calcLandRevenue($dag_data, $locationArr)
+    {
         $data['dist_code'] = $locationArr[0];
         $data['subdiv_code'] = $locationArr[1];
         $data['cir_code'] = $locationArr[2];
@@ -990,17 +952,16 @@ class LocationController extends CI_Controller
         $data['lot_no'] = $locationArr[4];
         $data['vill_townprt_code'] = $locationArr[5];
         $data['land_class_code'] = $dag_data->land_class_code;
-        
+
         $dag_no = $dag_data->dag_no;
         $bigha = $dag_data->dag_area_b;
         $katha = $dag_data->dag_area_k;
         $lessaChatak = $dag_data->dag_area_lc;
         $ganda = $dag_data->dag_area_g;
 
-        if(in_array($data['dist_code'], BARAK_VALLEY)) {
+        if (in_array($data['dist_code'], BARAK_VALLEY)) {
             $eq_bigha = $bigha + ($katha / 20) + ($lessaChatak / 320) + ($ganda / 6400);
-        }
-        else {
+        } else {
             $eq_bigha = $bigha + ($katha / 5) + ($lessaChatak / 100);
         }
 
@@ -1013,7 +974,7 @@ class LocationController extends CI_Controller
             log_message("error", 'LAND HUB API FAIL');
             $response = [
                 'status' => 'n',
-                'msg' => 'API FAIL!' 
+                'msg' => 'API FAIL!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -1024,26 +985,11 @@ class LocationController extends CI_Controller
 
         $this->dbswitch($data['dist_code']);
         $location = $this->db->query("SELECT rural_urban FROM location WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=?", [$data['dist_code'], $data['subdiv_code'], $data['cir_code'], $data['mouza_pargona_code'], $data['lot_no'], $data['vill_townprt_code']])->row();
-        if($location->rural_urban == 'U') {
-            if(empty($revenue_details) || $revenue_details->ruralurban != 'Urban') {
+        if ($location->rural_urban == 'U') {
+            if (empty($revenue_details) || $revenue_details->ruralurban != 'Urban') {
                 $response = [
                     'status' => 'n',
-                    'msg' => 'Revenue Land Class Wise Does not exist for this land class!' 
-                ];
-                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
-                echo json_encode($response);
-                return;
-            }
-            
-            $revenue_details->dag_revenue = $eq_bigha * $revenue_details->dag_revenue_perbigha;
-            $revenue_details->dag_local_tax = $eq_bigha * $revenue_details->dag_local_tax_min;
-
-        }
-        else if ($location->rural_urban == 'R') {
-            if(empty($revenue_details) || $revenue_details->ruralurban != 'Rural') {
-                $response = [
-                    'status' => 'n',
-                    'msg' => 'Revenue Land Class Wise Does not exist for this land class!' 
+                    'msg' => 'Revenue Land Class Wise Does not exist for this land class!'
                 ];
                 $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
@@ -1052,26 +998,35 @@ class LocationController extends CI_Controller
 
             $revenue_details->dag_revenue = $eq_bigha * $revenue_details->dag_revenue_perbigha;
             $revenue_details->dag_local_tax = $eq_bigha * $revenue_details->dag_local_tax_min;
+        } else if ($location->rural_urban == 'R') {
+            if (empty($revenue_details) || $revenue_details->ruralurban != 'Rural') {
+                $response = [
+                    'status' => 'n',
+                    'msg' => 'Revenue Land Class Wise Does not exist for this land class!'
+                ];
+                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                return;
+            }
 
+            $revenue_details->dag_revenue = $eq_bigha * $revenue_details->dag_revenue_perbigha;
+            $revenue_details->dag_local_tax = $eq_bigha * $revenue_details->dag_local_tax_min;
         }
         return $revenue_details;
     }
 
-    public function getPartdagData() {
+    public function getPartdagData()
+    {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -1081,41 +1036,38 @@ class LocationController extends CI_Controller
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
 
-            $apikey = $data->api_key;
+
             $villageCode = $data->vill_townprt_code;
             $dagNo = $data->dag_no;
             $partDag = $data->part_dag;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
-            if(!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
+            
+            
+            if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
-            if(!isset($_POST['dag_no']) || empty($_POST['dag_no']))
+            if (!isset($_POST['dag_no']) || empty($_POST['dgetag_no']))
                 $msg = $msg . " Missing Dag No ";
-            if(!isset($_POST['part_dag']) || empty($_POST['part_dag']))
+            if (!isset($_POST['part_dag']) || empty($_POST['part_dag']))
                 $msg = $msg . " Missing Part Dag No ";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
 
-            $apikey = $_POST['apikey'];
+
             $villageCode = $_POST['vill_townprt_code'];
             $dagNo = $_POST['dag_no'];
             $partDag = $_POST['part_dag'];
@@ -1139,12 +1091,12 @@ class LocationController extends CI_Controller
         //first search in chitha whether updated
         $partDagDetailsChitha = $this->db->query('SELECT * FROM chitha_basic_splitted_dags WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND survey_no=?', [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $part_dag])->row();
 
-        if(!empty($partDagDetailsChitha)) {
+        if (!empty($partDagDetailsChitha)) {
             $partDagDetailsChitha->from_chitha = 1;
             $partDagDetailsChitha->from_bhunaksha = 0;
 
             $possessors = $this->db->query("SELECT * FROM splitted_dags_possessors WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND old_dag_no=? AND part_dag=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $part_dag])->result();
-            if(!empty($possessors)) {
+            if (!empty($possessors)) {
                 foreach ($possessors as $possessor) {
                     $guard_relation = $possessor->guard_relation;
                     $pattadar_relation = $possessor->pattadar_relation;
@@ -1157,16 +1109,13 @@ class LocationController extends CI_Controller
                     $guard_relation_name = (!empty($guard_relation_data)) ? $guard_relation_data->guard_rel_desc_as . ' (' . $guard_relation_data->guard_rel_desc . ')' : '';
                     $pattadar_relation_name = (!empty($pdar_relation_data)) ? $pdar_relation_data->guard_rel_desc_as . ' (' . $pdar_relation_data->guard_rel_desc . ')' : '';
 
-                    if($mode_of_acquisition == 's') {
+                    if ($mode_of_acquisition == 's') {
                         $mode_of_acquisition_name = 'Sale';
-                    }
-                    else if($mode_of_acquisition == 'm') {
+                    } else if ($mode_of_acquisition == 'm') {
                         $mode_of_acquisition_name = 'Mortgage';
-                    }
-                    else if($mode_of_acquisition == 'l') {
+                    } else if ($mode_of_acquisition == 'l') {
                         $mode_of_acquisition_name = 'Lease';
-                    }
-                    else {
+                    } else {
                         $mode_of_acquisition_name = '';
                     }
 
@@ -1178,18 +1127,23 @@ class LocationController extends CI_Controller
 
             $pattadars = $this->db->query("SELECT cdp.*, cp.pdar_name, cp.pdar_father FROM chitha_dag_pattadar cdp, chitha_pattadar cp WHERE cdp.dist_code=cp.dist_code AND cdp.subdiv_code=cp.subdiv_code AND cdp.cir_code=cp.cir_code AND cdp.mouza_pargona_code=cp.mouza_pargona_code AND cdp.lot_no=cp.lot_no AND cdp.vill_townprt_code=cp.vill_townprt_code AND cdp.patta_no=cp.patta_no AND cdp.patta_type_code=cp.patta_type_code AND cdp.pdar_id=cp.pdar_id AND cdp.dist_code=? AND cdp.subdiv_code=? AND cdp.cir_code=? AND cdp.mouza_pargona_code=? AND cdp.lot_no=? AND cdp.vill_townprt_code=? AND cdp.patta_no=? AND cdp.patta_type_code=? AND cdp.dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $partDagDetailsChitha->patta_no, $partDagDetailsChitha->patta_type_code, $partDagDetailsChitha->survey_no])->result();
 
-            $partDagPattadars = [];
-            if(!empty($pattadars)) {
+            // $partDagPattadars = [];
+            if (!empty($pattadars)) {
                 foreach ($pattadars as $pattadar) {
-                    $row['label'] = $pattadar->pdar_name . ' (' . $pattadar->pdar_father . ')';
-                    $row['value'] = $dist_code . '-' . $subdiv_code . '-' . $cir_code . '-' . $mouza_pargona_code . '-' . $lot_no . '-' . $vill_townprt_code . '-' . $pattadar->patta_no . '-' . $pattadar->patta_type_code . '-' . $pattadar->pdar_id;
+                    $pattadar->label = $pattadar->pdar_name . ' (' . $pattadar->pdar_father . ')';
+                    $pattadar->value = $dist_code . '-' . $subdiv_code . '-' . $cir_code . '-' . $mouza_pargona_code . '-' . $lot_no . '-' . $vill_townprt_code . '-' . $pattadar->patta_no . '-' . $pattadar->patta_type_code . '-' . $pattadar->pdar_id;
 
-                    $partDagPattadars[] = $row;
+                    // $row['label'] = $pattadar->pdar_name . ' (' . $pattadar->pdar_father . ')';
+                    // $row['value'] = $dist_code . '-' . $subdiv_code . '-' . $cir_code . '-' . $mouza_pargona_code . '-' . $lot_no . '-' . $vill_townprt_code . '-' . $pattadar->patta_no . '-' . $pattadar->patta_type_code . '-' . $pattadar->pdar_id;
+
+                    // $partDagPattadars[] = $row;
                 }
             }
 
-            $partDagDetailsChitha->pattadars = $partDagPattadars;
+            $partDagDetailsChitha->pattadars = $pattadars;
             $partDagDetailsChitha->possessors = $possessors;
+
+            $partDagDetailsChitha->tenants = $this->db->query("SELECT * FROM chitha_tenant WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $partDagDetailsChitha->survey_no])->result();
 
             $response = [
                 'status' => 'y',
@@ -1214,7 +1168,7 @@ class LocationController extends CI_Controller
             log_message("error", 'LAND HUB API FAIL');
             $response = [
                 'status' => 'n',
-                'msg' => 'API Failed!' 
+                'msg' => 'API Failed!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -1225,12 +1179,12 @@ class LocationController extends CI_Controller
         $locationCode = $api_output['data']->locationCode;
         $inputOldDagNo = $api_output['data']->inputOldDagNo;
 
-        if(!empty($partDags)) {
-            foreach($partDags as $pDag) {
+        if (!empty($partDags)) {
+            foreach ($partDags as $pDag) {
                 $partDag = $pDag->newDagNo;
                 $dag_area_sqmtr = $pDag->plotArea;
                 //check in chitha whether created
-                if($part_dag == $partDag) {
+                if ($part_dag == $partDag) {
                     $row = [];
                     $row['survey_no'] = $partDag;
                     $row['from_chitha'] = 0;
@@ -1263,24 +1217,20 @@ class LocationController extends CI_Controller
         $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
         echo json_encode($response);
         return;
-
     }
 
-    public function getLandRevenue() {
+    public function getLandRevenue()
+    {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->land_class_code) || $data->land_class_code == null)
@@ -1290,34 +1240,31 @@ class LocationController extends CI_Controller
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 exit;
             }
 
-            $apikey = $data->api_key;
+
             $villageCode = $data->vill_townprt_code;
             $landClassCode = $data->land_class_code;
             $areaSm = $data->area_sm;
-            
         } else {
             $msg = null;
-            if(empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
-            if(!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
+            
+            
+            if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
-            if(!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
+            if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
                 $msg = $msg . " Missing Land Class ";
-            if(!isset($_POST['area_sm']) || empty($_POST['area_sm']))
+            if (!isset($_POST['area_sm']) || empty($_POST['area_sm']))
                 $msg = $msg . " Missing Area ";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg 
+                    'msg' => $msg
                 ];
                 $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
@@ -1345,48 +1292,46 @@ class LocationController extends CI_Controller
 
         $areaTotal = (in_array($dist_code, BARAK_VALLEY)) ? (20 / 4.1806368) * $area_sm : (1 / 13.37803776) * $area_sm;
 
-        if(in_array($dist_code, BARAK_VALLEY)) {
-            $bigha = floor($areaTotal/6400);
-            $katha = floor(($areaTotal - ($bigha * 6400))/320);
-            $lessaChatak = floor(($areaTotal - ($bigha * 6400 + $katha * 320))/20);
+        if (in_array($dist_code, BARAK_VALLEY)) {
+            $bigha = floor($areaTotal / 6400);
+            $katha = floor(($areaTotal - ($bigha * 6400)) / 320);
+            $lessaChatak = floor(($areaTotal - ($bigha * 6400 + $katha * 320)) / 20);
             $ganda = number_format($areaTotal - ($bigha * 6400 + $katha * 320 + $lessaChatak * 20), 4);
-        }
-        else {
-            $bigha = floor($areaTotal/100);
-            $katha = floor(($areaTotal - ($bigha * 100))/20);
+        } else {
+            $bigha = floor($areaTotal / 100);
+            $katha = floor(($areaTotal - ($bigha * 100)) / 20);
             $lessaChatak = $areaTotal - ($bigha * 100 + $katha * 20);
         }
 
-        if(in_array($dist_code, BARAK_VALLEY)) {
+        if (in_array($dist_code, BARAK_VALLEY)) {
             $eq_bigha = $bigha + ($katha / 20) + ($lessaChatak / 320) + ($ganda / 6400);
-        }
-        else {
+        } else {
             $eq_bigha = $bigha + ($katha / 5) + ($lessaChatak / 100);
         }
 
         $this->dbswitch($dist_code);
 
         $location = $this->db->query('SELECT * FROM location WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=?', [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code])->row();
-        if(empty($location)) {
+        if (empty($location)) {
             $response = [
                 'status' => 'n',
-                'msg' => 'Could not find location!' 
+                'msg' => 'Could not find location!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
             return;
         }
-        if($location->rural_urban == 'N' || $location->rural_urban == '' || $location->rural_urban == null) {
+        if ($location->rural_urban == 'N' || $location->rural_urban == '' || $location->rural_urban == null) {
             $response = [
                 'status' => 'n',
-                'msg' => 'Village not Flagged in location as rural urban. Cannot process!' 
+                'msg' => 'Village not Flagged in location as rural urban. Cannot process!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
             return;
         }
 
-            // $this->load->model('NcVillageModel');
+        // $this->load->model('NcVillageModel');
         $data = [];
         $url = LANDHUB_BASE_URL . "/NicApi/getRevenueLandClassCodeWise";
         $method = 'POST';
@@ -1401,7 +1346,7 @@ class LocationController extends CI_Controller
             log_message("error", 'LAND HUB API FAIL');
             $response = [
                 'status' => 'n',
-                'msg' => 'API FAIL!' 
+                'msg' => 'API FAIL!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
@@ -1411,17 +1356,17 @@ class LocationController extends CI_Controller
 
         $revenue_details = $response->data;
 
-        if($location->rural_urban == 'U') {
-            if(empty($revenue_details) || $revenue_details->ruralurban != 'Urban') {
+        if ($location->rural_urban == 'U') {
+            if (empty($revenue_details) || $revenue_details->ruralurban != 'Urban') {
                 $response = [
                     'status' => 'n',
-                    'msg' => 'Revenue Land Class Wise Does not exist for this land class!' 
+                    'msg' => 'Revenue Land Class Wise Does not exist for this land class!'
                 ];
                 $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
-            
+
             $revenue_details->dag_revenue = $eq_bigha * $revenue_details->dag_revenue_perbigha;
             $revenue_details->dag_local_tax = $eq_bigha * $revenue_details->dag_local_tax_min;
 
@@ -1433,12 +1378,11 @@ class LocationController extends CI_Controller
             $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
             return;
-        }
-        else if ($location->rural_urban == 'R') {
-            if(empty($revenue_details) || $revenue_details->ruralurban != 'Rural') {
+        } else if ($location->rural_urban == 'R') {
+            if (empty($revenue_details) || $revenue_details->ruralurban != 'Rural') {
                 $response = [
                     'status' => 'n',
-                    'msg' => 'Revenue Land Class Wise Does not exist for this land class!' 
+                    'msg' => 'Revenue Land Class Wise Does not exist for this land class!'
                 ];
                 $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
@@ -1464,7 +1408,8 @@ class LocationController extends CI_Controller
 
 
 
-    public function mergeVillage ($input_string) {
+    public function mergeVillage($input_string)
+    {
         // $input_string = $this->input->post('vill_townprt_code', true);
         $inputArr = explode('-', $input_string);
         $dist_code = $inputArr[0];
@@ -1489,11 +1434,11 @@ class LocationController extends CI_Controller
                 'vill_townprt_code' => $vill_townprt_code
             ]);
 
-            if($locationApi->responseType != 2) {
+            if ($locationApi->responseType != 2) {
                 // $this->db->trans_rollback();
                 return [
                     'status' => 'n',
-                    'msg' => 'Could not retrieve location from API for merging!' 
+                    'msg' => 'Could not retrieve location from API for merging!'
                 ];
                 // echo json_encode([
                 //     "status" => "FAILED",
@@ -1503,11 +1448,11 @@ class LocationController extends CI_Controller
                 // exit;
             }
 
-            if(empty($locationApi->data)) {
+            if (empty($locationApi->data)) {
                 // $this->db->trans_rollback();
                 return [
                     'status' => 'n',
-                    'msg' => 'Location does not exist in dharitree!' 
+                    'msg' => 'Location does not exist in dharitree!'
                 ];
                 // echo json_encode([
                 //     "status" => "FAILED",
@@ -1518,7 +1463,7 @@ class LocationController extends CI_Controller
             }
 
             // if(!empty($locationApi) && !empty($locationApi->data)) {
-                //insert
+            //insert
             $insertLocationArr = [
                 'dist_code' => $dist_code,
                 'subdiv_code' => $subdiv_code,
@@ -1533,17 +1478,17 @@ class LocationController extends CI_Controller
                 'dist_abbr' => $locationApi->data->dist_abbr,
                 'rural_urban' => $locationApi->data->rural_urban,
                 'uuid' => $locationApi->data->uuid,
-                'is_gmc' => (isset($locationApi->data->is_gmc) && $locationApi->data->is_gmc!=null) ? $locationApi->data->is_gmc : null,
-                'lgd_code' => (isset($locationApi->data->lgd_code) && $locationApi->data->lgd_code!=null) ? $locationApi->data->lgd_code : null,
-                'village_status' => (isset($locationApi->data->village_status) && $locationApi->data->village_status!=null) ? $locationApi->data->village_status : null,
-                'is_map' => (isset($locationApi->data->is_map) && $locationApi->data->is_map!=null) ? $locationApi->data->is_map : null,
-                'created_date' => (isset($locationApi->data->created_date) && $locationApi->data->created_date!=null) ? $locationApi->data->created_date : null,
-                'updated_date' => (isset($locationApi->data->updated_date) && $locationApi->data->updated_date!=null) ? $locationApi->data->updated_date : null,
-                'user_code' => (isset($locationApi->data->user_code) && $locationApi->data->user_code!=null) ? $locationApi->data->user_code : null,
-                'status' => (isset($locationApi->data->status) && $locationApi->data->status!=null) ? $locationApi->data->status : null,
+                'is_gmc' => (isset($locationApi->data->is_gmc) && $locationApi->data->is_gmc != null) ? $locationApi->data->is_gmc : null,
+                'lgd_code' => (isset($locationApi->data->lgd_code) && $locationApi->data->lgd_code != null) ? $locationApi->data->lgd_code : null,
+                'village_status' => (isset($locationApi->data->village_status) && $locationApi->data->village_status != null) ? $locationApi->data->village_status : null,
+                'is_map' => (isset($locationApi->data->is_map) && $locationApi->data->is_map != null) ? $locationApi->data->is_map : null,
+                'created_date' => (isset($locationApi->data->created_date) && $locationApi->data->created_date != null) ? $locationApi->data->created_date : null,
+                'updated_date' => (isset($locationApi->data->updated_date) && $locationApi->data->updated_date != null) ? $locationApi->data->updated_date : null,
+                'user_code' => (isset($locationApi->data->user_code) && $locationApi->data->user_code != null) ? $locationApi->data->user_code : null,
+                'status' => (isset($locationApi->data->status) && $locationApi->data->status != null) ? $locationApi->data->status : null,
                 'nc_btad' => (isset($locationApi->data->nc_btad) && $locationApi->data->nc_btad != null) ? $locationApi->data->nc_btad : null,
-                'is_periphary' => (isset($locationApi->data->is_periphary) && $locationApi->data->is_periphary!=null) ? $locationApi->data->is_periphary : null,
-                'is_tribal' => (isset($locationApi->data->is_tribal) && $locationApi->data->is_tribal !=null) ? $locationApi->data->is_tribal : null,
+                'is_periphary' => (isset($locationApi->data->is_periphary) && $locationApi->data->is_periphary != null) ? $locationApi->data->is_periphary : null,
+                'is_tribal' => (isset($locationApi->data->is_tribal) && $locationApi->data->is_tribal != null) ? $locationApi->data->is_tribal : null,
                 'district_headquater' => (isset($locationApi->data->district_headquater) && $locationApi->data->district_headquater != null) ? $locationApi->data->district_headquater : null
             ];
             // if($this->db->field_exists('village_status', 'location')) {
@@ -1552,11 +1497,11 @@ class LocationController extends CI_Controller
 
 
             $status = $this->db->insert('location', $insertLocationArr);
-            if(!$status || $this->db->affected_rows() < 1) {
+            if (!$status || $this->db->affected_rows() < 1) {
                 // $this->db->trans_rollback();
                 return [
                     'status' => 'n',
-                    'msg' => 'Could not insert location in chitha!' 
+                    'msg' => 'Could not insert location in chitha!'
                 ];
                 // echo json_encode([
                 //     "status" => "FAILED",
@@ -1577,11 +1522,11 @@ class LocationController extends CI_Controller
             'vill_townprt_code' => $vill_townprt_code
         ]);
 
-        if($dagsApi->responseType != 2) {
+        if ($dagsApi->responseType != 2) {
             // $this->db->trans_rollback();
             return [
                 'status' => 'n',
-                'msg' => 'Could not retrieve dags from API!' 
+                'msg' => 'Could not retrieve dags from API!'
             ];
             // echo json_encode([
             //     "status" => "FAILED",
@@ -1601,12 +1546,12 @@ class LocationController extends CI_Controller
         //     exit;
         // }
 
-        if(!empty($dagsApi->data)) {
+        if (!empty($dagsApi->data)) {
             foreach ($dagsApi->data as $dag) {
                 //check in local database
                 $dag_no = $dag->dag_no;
                 $dag_exist = $this->db->query("SELECT dag_no FROM chitha_basic WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no])->row();
-                if(empty($dag_exist)) {
+                if (empty($dag_exist)) {
                     //then insert into chitha
                     $insertChithaArr = [
                         'dist_code' => $dist_code,
@@ -1640,26 +1585,26 @@ class LocationController extends CI_Controller
                         'dag_w_dag_no' => $dag->dag_w_dag_no,
                         'dag_nlrg_no' => (!empty($dag->dag_nlrg_no)) ? $dag->dag_nlrg_no : '',
                         'dp_flag_yn' => $dag->dp_flag_yn,
-                        'user_code' => $dag->user_code,//
-                        'date_entry' => $dag->date_entry,//
+                        'user_code' => $dag->user_code, //
+                        'date_entry' => $dag->date_entry, //
                         'old_patta_no' => $dag->old_patta_no,
                         'jama_yn' => $dag->jama_yn,
                         // 'survey_no' => $split_dag,
-                        'operation' => $dag->operation,//
-                        'status' => (isset($dag->status) && $dag->status!=null) ? $dag->status : null,
-                        'zonal_value' => (isset($dag->zonal_value) && $dag->zonal_value!=null) ? $dag->zonal_value : null,
-                        'police_station' => (isset($dag->police_station) && $dag->police_station!=null) ? $dag->police_station : null,
-                        'revenue_paid_upto' => (isset($dag->revenue_paid_upto) && $dag->revenue_paid_upto!=null) ? $dag->revenue_paid_upto : null,
+                        'operation' => $dag->operation, //
+                        'status' => (isset($dag->status) && $dag->status != null) ? $dag->status : null,
+                        'zonal_value' => (isset($dag->zonal_value) && $dag->zonal_value != null) ? $dag->zonal_value : null,
+                        'police_station' => (isset($dag->police_station) && $dag->police_station != null) ? $dag->police_station : null,
+                        'revenue_paid_upto' => (isset($dag->revenue_paid_upto) && $dag->revenue_paid_upto != null) ? $dag->revenue_paid_upto : null,
                         'block_code' => (isset($dag->block_code) && $dag->block_code != null) ? $dag->block_code : null,
                         'gp_code' => (isset($dag->gp_code) && $dag->gp_code != null) ? $dag->gp_code : null,
-                        'category_id' => (isset($dag->category_id) && $dag->category_id!=null) ? $dag->category_id : null
+                        'category_id' => (isset($dag->category_id) && $dag->category_id != null) ? $dag->category_id : null
                     ];
                     $insertChithaStatus = $this->db->insert('chitha_basic', $insertChithaArr);
-                    if(!$insertChithaStatus || $this->db->affected_rows() < 1) {
+                    if (!$insertChithaStatus || $this->db->affected_rows() < 1) {
                         // $this->db->trans_rollback();
                         return [
                             'status' => 'n',
-                            'msg' => 'Dag entry Failed in chitha basic!' 
+                            'msg' => 'Dag entry Failed in chitha basic!'
                         ];
                         // echo json_encode([
                         //     "status" => "FAILED",
@@ -1682,11 +1627,11 @@ class LocationController extends CI_Controller
             'vill_townprt_code' => $vill_townprt_code
         ]);
 
-        if($chithaPattadars->responseType != 2) {
+        if ($chithaPattadars->responseType != 2) {
             // $this->db->trans_rollback();
             return [
                 'status' => 'n',
-                'msg' => 'Could not retrieve from API!' 
+                'msg' => 'Could not retrieve from API!'
             ];
             // echo json_encode([
             //     "status" => "FAILED",
@@ -1704,11 +1649,11 @@ class LocationController extends CI_Controller
         //     ]);
         //     exit;
         // }
-        if(!empty($chithaPattadars->data)) {
+        if (!empty($chithaPattadars->data)) {
             foreach ($chithaPattadars->data as $chithaPdar) {
                 $pdarCheck = $this->db->query("SELECT pdar_id, patta_no, patta_type_code FROM chitha_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND patta_no=? AND patta_type_code=? AND pdar_id=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $chithaPdar->patta_no, $chithaPdar->patta_type_code, $chithaPdar->pdar_id])->row();
 
-                if(empty($pdarCheck)) {
+                if (empty($pdarCheck)) {
                     //insert chitha_pattadar
                     $chithaPattadarArr = [
                         'dist_code' => $dist_code,
@@ -1723,27 +1668,27 @@ class LocationController extends CI_Controller
                         'pdar_name' => $chithaPdar->pdar_name,
                         'pdar_guard_reln' => $chithaPdar->pdar_guard_reln,
                         'pdar_father' => $chithaPdar->pdar_father,
-                        'pdar_add1' => (isset($chithaPdar->pdar_add1) && $chithaPdar->pdar_add1!=null) ? $chithaPdar->pdar_add1 : null,
-                        'pdar_add2' => (isset($chithaPdar->pdar_add2) && $chithaPdar->pdar_add2!=null) ? $chithaPdar->pdar_add2 : null,
-                        'pdar_add3' => (isset($chithaPdar->pdar_add3) && $chithaPdar->pdar_add3!=null) ? $chithaPdar->pdar_add3 : null,
-                        'pdar_pan_no' => (isset($chithaPdar->pdar_pan_no) && $chithaPdar->pdar_pan_no!=null) ? $chithaPdar->pdar_pan_no : null,
-                        'pdar_citizen_no' => (isset($chithaPdar->pdar_citizen_no) && $chithaPdar->pdar_citizen_no!=null) ? $chithaPdar->pdar_citizen_no : null,
-                        'pdar_gender' => (isset($chithaPdar->pdar_gender) && $chithaPdar->pdar_gender!=null) ? $chithaPdar->pdar_gender : null,
+                        'pdar_add1' => (isset($chithaPdar->pdar_add1) && $chithaPdar->pdar_add1 != null) ? $chithaPdar->pdar_add1 : null,
+                        'pdar_add2' => (isset($chithaPdar->pdar_add2) && $chithaPdar->pdar_add2 != null) ? $chithaPdar->pdar_add2 : null,
+                        'pdar_add3' => (isset($chithaPdar->pdar_add3) && $chithaPdar->pdar_add3 != null) ? $chithaPdar->pdar_add3 : null,
+                        'pdar_pan_no' => (isset($chithaPdar->pdar_pan_no) && $chithaPdar->pdar_pan_no != null) ? $chithaPdar->pdar_pan_no : null,
+                        'pdar_citizen_no' => (isset($chithaPdar->pdar_citizen_no) && $chithaPdar->pdar_citizen_no != null) ? $chithaPdar->pdar_citizen_no : null,
+                        'pdar_gender' => (isset($chithaPdar->pdar_gender) && $chithaPdar->pdar_gender != null) ? $chithaPdar->pdar_gender : null,
                         'user_code' => $chithaPdar->user_code,
                         'date_entry' => $chithaPdar->date_entry,
                         'operation' => $chithaPdar->operation,
                         'jama_yn' => $chithaPdar->jama_yn,
                     ];
-                    if ($this->db->field_exists('pdar_relation', 'chitha_pattadar') && isset($chithaPdar->pdar_relation) && $chithaPdar->pdar_relation!=null) {
+                    if ($this->db->field_exists('pdar_relation', 'chitha_pattadar') && isset($chithaPdar->pdar_relation) && $chithaPdar->pdar_relation != null) {
                         $chithaPattadarArr['pdar_relation'] = $chithaPdar->pdar_relation;
                     }
 
                     $chithaPdarStatus = $this->db->insert('chitha_pattadar', $chithaPattadarArr);
-                    if(!$chithaPdarStatus || $this->db->affected_rows() < 1) {
+                    if (!$chithaPdarStatus || $this->db->affected_rows() < 1) {
                         // $this->db->trans_rollback();
                         return [
                             'status' => 'n',
-                            'msg' => 'Chitha Pattadar entry Failed in chitha pattadar!' 
+                            'msg' => 'Chitha Pattadar entry Failed in chitha pattadar!'
                         ];
                         // echo json_encode([
                         //     "status" => "FAILED",
@@ -1766,11 +1711,11 @@ class LocationController extends CI_Controller
             'vill_townprt_code' => $vill_townprt_code
         ]);
 
-        if($chithaDagPattadars->responseType != 2) {
+        if ($chithaDagPattadars->responseType != 2) {
             // $this->db->trans_rollback();
             return [
                 'status' => 'n',
-                'msg' => 'Could not retrieve dag pattadars from API!' 
+                'msg' => 'Could not retrieve dag pattadars from API!'
             ];
             // echo json_encode([
             //     "status" => "FAILED",
@@ -1788,13 +1733,13 @@ class LocationController extends CI_Controller
         //     ]);
         //     exit;
         // }
-        if(!empty($chithaDagPattadars->data)) {
+        if (!empty($chithaDagPattadars->data)) {
             foreach ($chithaDagPattadars->data as $dagPdar) {
                 $checkDagPdar = $this->db->query("SELECT * FROM chitha_dag_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND patta_no=? AND patta_type_code=? AND dag_no=? AND pdar_id=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dagPdar->patta_no, $dagPdar->patta_type_code, $dagPdar->dag_no, $dagPdar->pdar_id])->row();
 
                 $checkDagInChitha = $this->db->query("SELECT * FROM chitha_basic WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dagPdar->dag_no])->row();
 
-                if(empty($checkDagPdar) && !empty($checkDagInChitha)) {
+                if (empty($checkDagPdar) && !empty($checkDagInChitha)) {
                     //insert into chitha_dag_pattadar
                     $dagPattadarArr = array(
                         'dist_code' => $dist_code,
@@ -1811,28 +1756,28 @@ class LocationController extends CI_Controller
                         'dag_por_k' => $dagPdar->dag_por_k,
                         'dag_por_lc' => $dagPdar->dag_por_lc,
                         'dag_por_g' => $dagPdar->dag_por_g,
-                        'dag_por_kr' => (isset($dagPdar->dag_por_kr) && $dagPdar->dag_por_kr!=null) ? $dagPdar->dag_por_kr : null,
-                        'pdar_land_n' => (isset($dagPdar->pdar_land_n) && $dagPdar->pdar_land_n!=null) ? $dagPdar->pdar_land_n : null,
-                        'pdar_land_s' => (isset($dagPdar->pdar_land_s) && $dagPdar->pdar_land_s!=null) ? $dagPdar->pdar_land_s : null,
-                        'pdar_land_e' => (isset($dagPdar->pdar_land_e) && $dagPdar->pdar_land_e!=null) ? $dagPdar->pdar_land_e : null,
-                        'pdar_land_w' => (isset($dagPdar->pdar_land_w) && $dagPdar->pdar_land_w!=null) ? $dagPdar->pdar_land_w : null,
-                        'pdar_land_acre' => (isset($dagPdar->pdar_land_acre) && $dagPdar->pdar_land_acre!=null) ? $dagPdar->pdar_land_acre : null,
-                        'pdar_land_revenue' => (isset($dagPdar->pdar_land_revenue) && $dagPdar->pdar_land_revenue!=null) ? $dagPdar->pdar_land_revenue : null,
-                        'pdar_land_localtax' => (isset($dagPdar->pdar_land_localtax) && $dagPdar->pdar_land_localtax!=null) ? $dagPdar->pdar_land_localtax : null,
+                        'dag_por_kr' => (isset($dagPdar->dag_por_kr) && $dagPdar->dag_por_kr != null) ? $dagPdar->dag_por_kr : null,
+                        'pdar_land_n' => (isset($dagPdar->pdar_land_n) && $dagPdar->pdar_land_n != null) ? $dagPdar->pdar_land_n : null,
+                        'pdar_land_s' => (isset($dagPdar->pdar_land_s) && $dagPdar->pdar_land_s != null) ? $dagPdar->pdar_land_s : null,
+                        'pdar_land_e' => (isset($dagPdar->pdar_land_e) && $dagPdar->pdar_land_e != null) ? $dagPdar->pdar_land_e : null,
+                        'pdar_land_w' => (isset($dagPdar->pdar_land_w) && $dagPdar->pdar_land_w != null) ? $dagPdar->pdar_land_w : null,
+                        'pdar_land_acre' => (isset($dagPdar->pdar_land_acre) && $dagPdar->pdar_land_acre != null) ? $dagPdar->pdar_land_acre : null,
+                        'pdar_land_revenue' => (isset($dagPdar->pdar_land_revenue) && $dagPdar->pdar_land_revenue != null) ? $dagPdar->pdar_land_revenue : null,
+                        'pdar_land_localtax' => (isset($dagPdar->pdar_land_localtax) && $dagPdar->pdar_land_localtax != null) ? $dagPdar->pdar_land_localtax : null,
                         'user_code' => $dagPdar->user_code,
                         'date_entry' => $dagPdar->date_entry,
                         'operation' => $dagPdar->operation,
-                        'p_flag' => (isset($dagPdar->p_flag) && $dagPdar->p_flag!=null) ? $dagPdar->p_flag : null,
-                        'jama_yn' => (isset($dagPdar->jama_yn) && $dagPdar->jama_yn!=null) ? $dagPdar->jama_yn : null,
-                        'pdar_land_map' => (isset($dagPdar->pdar_land_map) && $dagPdar->pdar_land_map!=null) ? $dagPdar->pdar_land_map : null,
+                        'p_flag' => (isset($dagPdar->p_flag) && $dagPdar->p_flag != null) ? $dagPdar->p_flag : null,
+                        'jama_yn' => (isset($dagPdar->jama_yn) && $dagPdar->jama_yn != null) ? $dagPdar->jama_yn : null,
+                        'pdar_land_map' => (isset($dagPdar->pdar_land_map) && $dagPdar->pdar_land_map != null) ? $dagPdar->pdar_land_map : null,
 
                     );
                     $dagPattadarStatus = $this->db->insert('chitha_dag_pattadar', $dagPattadarArr);
-                    if(!$dagPattadarStatus || $this->db->affected_rows() < 1) {
+                    if (!$dagPattadarStatus || $this->db->affected_rows() < 1) {
                         // $this->db->trans_rollback();
                         return [
                             'status' => 'n',
-                            'msg' => 'Chitha Dag Pattadar entry Failed in chitha dag pattadar!' 
+                            'msg' => 'Chitha Dag Pattadar entry Failed in chitha dag pattadar!'
                         ];
                         // echo json_encode([
                         //     "status" => "FAILED",
@@ -1856,11 +1801,11 @@ class LocationController extends CI_Controller
             'vill_townprt_code' => $vill_townprt_code
         ]);
 
-        if($chithaLmNotes->responseType != 2) {
+        if ($chithaLmNotes->responseType != 2) {
             // $this->db->trans_rollback();
             return [
                 'status' => 'n',
-                'msg' => 'Could not retrieve lm notes from API!' 
+                'msg' => 'Could not retrieve lm notes from API!'
             ];
             // echo json_encode([
             //     "status" => "FAILED",
@@ -1871,13 +1816,13 @@ class LocationController extends CI_Controller
         }
 
 
-        if(!empty($chithaLmNotes->data)) {
+        if (!empty($chithaLmNotes->data)) {
             foreach ($chithaLmNotes->data as $lmnote) {
                 $checkLmNote = $this->db->query("SELECT * FROM chitha_rmk_lmnote WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND lm_note_cron_no=? AND rmk_type_hist_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $lmnote->dag_no, $lmnote->lm_note_cron_no, $lmnote->rmk_type_hist_no])->row();
 
                 $checkDagInChitha = $this->db->query("SELECT * FROM chitha_basic WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $lmnote->dag_no])->row();
 
-                if(empty($checkLmNote) && !empty($checkDagInChitha)) {
+                if (empty($checkLmNote) && !empty($checkDagInChitha)) {
                     $lmnoteArr = [
                         'dist_code' => $dist_code,
                         'subdiv_code' => $subdiv_code,
@@ -1890,8 +1835,8 @@ class LocationController extends CI_Controller
                         'rmk_type_hist_no' => $lmnote->rmk_type_hist_no,
                         'lm_note_lno' => $lmnote->lm_note_lno,
                         'lm_note' => $lmnote->lm_note,
-                        'lm_note_date' => (isset($lmnote->lm_note_date) && $lmnote->lm_note_date!=null) ? $lmnote->lm_note_date : null,
-                        'lm_code' => (isset($lmnote->lm_code) && $lmnote->lm_code!=null) ? $lmnote->lm_code : null,
+                        'lm_note_date' => (isset($lmnote->lm_note_date) && $lmnote->lm_note_date != null) ? $lmnote->lm_note_date : null,
+                        'lm_code' => (isset($lmnote->lm_code) && $lmnote->lm_code != null) ? $lmnote->lm_code : null,
                         'lm_sign' => $lmnote->lm_sign,
                         'co_approval' => $lmnote->co_approval,
                         'user_code' => $lmnote->user_code,
@@ -1899,11 +1844,11 @@ class LocationController extends CI_Controller
                         'operation' => $lmnote->operation
                     ];
                     $lmnoteStatus = $this->db->insert('chitha_rmk_lmnote', $lmnoteArr);
-                    if(!$lmnoteStatus || $this->db->affected_rows() < 1) {
+                    if (!$lmnoteStatus || $this->db->affected_rows() < 1) {
                         // $this->db->trans_rollback();
                         return [
                             'status' => 'n',
-                            'msg' => 'Chitha LM Note entry Failed in lmnote table!' 
+                            'msg' => 'Chitha LM Note entry Failed in lmnote table!'
                         ];
                         // echo json_encode([
                         //     "status" => "FAILED",
@@ -1928,7 +1873,7 @@ class LocationController extends CI_Controller
 
         return [
             'status' => 'y',
-            'msg' => 'Successfully merged all dharitree data to chitha!' 
+            'msg' => 'Successfully merged all dharitree data to chitha!'
         ];
 
         // echo json_encode([

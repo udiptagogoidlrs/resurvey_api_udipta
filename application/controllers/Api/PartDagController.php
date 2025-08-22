@@ -6,34 +6,39 @@ include APPPATH . '/libraries/CommonTrait.php';
 class PartDagController extends CI_Controller
 {
     use CommonTrait;
+    private $jwt_data;
 
     public function __construct()
     {
         parent::__construct();
         $this->load->model('Api/PartDagModel');
-        // $this->load->model('LoginModel');
-        // $this->load->model('UserModel');
-        // $this->load->helper('security');
+        $auth = validate_jwt();
+        if (!$auth['status']) {
+            $this->output
+                 ->set_status_header(401)
+                 ->set_content_type('application/json')
+                 ->set_output(json_encode(['error' => $auth['message']]))
+                 ->_display();
+            exit;
+        }
 
+        $this->jwt_data = $auth['data'];
     }
 
 
     public function submitPartDag()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+            
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -54,7 +59,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -64,12 +69,11 @@ class PartDagController extends CI_Controller
             $dag_land_revenue = $data->dag_land_revenue ? $data->dag_land_revenue : 0;
             $dag_local_tax = $data->dag_local_tax ? $data->dag_local_tax : 0;
             $pattadars = $data->pattadars ? $data->pattadars : [];
+            $tenants = $data->tenants ? $data->tenants : [];
         } else {
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
+            
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
@@ -88,7 +92,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['api_key'];
+            
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -99,6 +103,8 @@ class PartDagController extends CI_Controller
             $dag_land_revenue = $_POST['dag_land_revenue'] ? $_POST['dag_land_revenue'] : 0;
             $dag_local_tax = $_POST['dag_local_tax'] ? $_POST['dag_local_tax'] : 0;
             $pattadars = $_POST['pattadars'] ? $_POST['pattadars'] : [];
+            $tenants = $_POST['tenants'] ? $_POST['tenants'] : [];
+
             // $user_name = $_POST['user_name'];
             // $password = $_POST['password'];
         }
@@ -260,7 +266,7 @@ class PartDagController extends CI_Controller
             'dag_area_kr' => $getChithaDetails->dag_area_kr,
             'dag_nlrg_no' => (!empty($dag_nlrg_no)) ? $dag_nlrg_no : '',
             'dp_flag_yn' => $getChithaDetails->dp_flag_yn,
-            'user_code' => $payload->usercode,
+            'user_code' => $this->jwt_data->usercode,
             'date_entry' => date("Y-m-d | h:i:sa"),
             'old_patta_no' => $getChithaDetails->old_patta_no,
             'jama_yn' => $getChithaDetails->jama_yn,
@@ -325,7 +331,7 @@ class PartDagController extends CI_Controller
             'dag_area_kr' => $getChithaDetails->dag_area_kr,
             'dag_nlrg_no' => (!empty($dag_nlrg_no)) ? $dag_nlrg_no : '',
             'dp_flag_yn' => $getChithaDetails->dp_flag_yn,
-            'user_code' => $payload->usercode,
+            'user_code' => $this->jwt_data->usercode,
             'date_entry' => date("Y-m-d | h:i:sa"),
             'old_patta_no' => $getChithaDetails->old_patta_no,
             'jama_yn' => $getChithaDetails->jama_yn,
@@ -398,9 +404,36 @@ class PartDagController extends CI_Controller
         // insert into chitha_dag_pattadar
         if (!empty($pattadars) && count($pattadars) > 0) {
             foreach ($pattadars as $pattadar) {
-                $this->insertPattadar($pattadar, $part_dag);
+                $is_inserted = $this->insertPattadar($pattadar, $part_dag);
+                if (!$is_inserted) {
+                    $this->db->trans_rollback();
+                     log_message('error', 'Error in inserting pattadar: ' . json_encode($pattadar) . ' | DB Error: ' . $this->db->_error_message());
+                    $response = [
+                        'status' => 'n',
+                        'msg' => 'Insertion Error in Pattadar!'
+                    ];
+                    $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                    echo json_encode($response);
+                    return;
+                }
             }
         }
+        //insert into tenants
+        if (!empty($tenants) && count($tenants) > 0) {
+            $is_tenant_inserted = $this->insertTenant($tenants, $part_dag);
+            if (!$is_tenant_inserted) {
+                $this->db->trans_rollback();
+                log_message('error', 'Error in inserting tenant: ' . json_encode($tenants) . ' | DB Error: ' . $this->db->_error_message());
+                $response = [
+                    'status' => 'n',
+                    'msg' => 'Insertion Error in Tenant!'
+                ];
+                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                return;
+            }
+        }
+        //insert chitha_tenant
 
         if (!$this->db->trans_status()) {
             $this->db->trans_rollback();
@@ -430,20 +463,79 @@ class PartDagController extends CI_Controller
         echo json_encode($response);
         return;
     }
-
+    private function insertTenant($tenants, $part_dag){
+        foreach ($tenants as $tenant) {
+            $dist_code = $tenant->dist_code;
+            $subdiv_code = $tenant->subdiv_code;
+            $cir_code = $tenant->cir_code;
+            $mouza_pargona_code = $tenant->mouza_pargona_code;
+            $lot_no = $tenant->lot_no;
+            $vill_townprt_code = $tenant->vill_townprt_code;
+            $tenantCheck = $this->db->query(
+                "SELECT tenant_id FROM chitha_tenant WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no =? AND tenant_id=?",
+                [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $part_dag, $tenant->tenant_id]
+            )->row();
+            if (empty($tenantCheck)) {
+                $tenantArr = (array)$tenant;
+                $tenantArr['dag_no'] = $part_dag;
+                $tenantArr['user_code'] = $this->jwt_data->usercode;
+                $tenantArr['date_entry'] = date("Y-m-d | h:i:sa");
+                $tenantStatus = $this->db->insert('chitha_tenant', $tenantArr);
+                if (!$tenantStatus || $this->db->affected_rows() < 1) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
     private function insertPattadar($pattadar, $part_dag)
     {
-        $dist_code = $pattadar->dist_code;
-        $subdiv_code = $pattadar->subdiv_code;
-        $cir_code = $pattadar->cir_code;
-        $mouza_pargona_code = $pattadar->mouza_pargona_code;
-        $lot_no = $pattadar->lot_no;
-        $vill_townprt_code = $pattadar->vill_townprt_code;
+        try {
+            $dist_code = $pattadar->dist_code;
+            $subdiv_code = $pattadar->subdiv_code;
+            $cir_code = $pattadar->cir_code;
+            $mouza_pargona_code = $pattadar->mouza_pargona_code;
+            $lot_no = $pattadar->lot_no;
+            $vill_townprt_code = $pattadar->vill_townprt_code;
 
-        $pdarCheck = $this->db->query("SELECT pdar_id, patta_no, patta_type_code FROM chitha_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND patta_no=? AND patta_type_code=? AND pdar_id=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $pattadar->patta_no, $pattadar->patta_type_code, $pattadar->pdar_id])->row();
-        if (empty($pdarCheck)) {
-            //insert chitha_pattadar
-            $chithaPattadarArr = [
+            $pdarCheck = $this->db->query("SELECT pdar_id, patta_no, patta_type_code FROM chitha_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND patta_no=? AND patta_type_code=? AND pdar_id=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $pattadar->patta_no, $pattadar->patta_type_code, $pattadar->pdar_id])->row();
+            if (empty($pdarCheck)) {
+                //insert chitha_pattadar
+                $chithaPattadarArr = [
+                    'dist_code' => $dist_code,
+                    'subdiv_code' => $subdiv_code,
+                    'cir_code' => $cir_code,
+                    'mouza_pargona_code' => $mouza_pargona_code,
+                    'lot_no' => $lot_no,
+                    'vill_townprt_code' => $vill_townprt_code,
+                    'pdar_id' => $pattadar->pdar_id,
+                    'patta_no' => $pattadar->patta_no,
+                    'patta_type_code' => $pattadar->patta_type_code,
+                    'pdar_name' => $pattadar->pdar_name,
+                    'pdar_guard_reln' => $pattadar->pdar_guard_reln,
+                    'pdar_father' => $pattadar->pdar_father,
+                    'pdar_add1' => (isset($pattadar->pdar_add1) && $pattadar->pdar_add1 != null) ? $pattadar->pdar_add1 : null,
+                    'pdar_add2' => (isset($pattadar->pdar_add2) && $pattadar->pdar_add2 != null) ? $pattadar->pdar_add2 : null,
+                    'pdar_add3' => (isset($pattadar->pdar_add3) && $pattadar->pdar_add3 != null) ? $pattadar->pdar_add3 : null,
+                    'pdar_pan_no' => (isset($pattadar->pdar_pan_no) && $pattadar->pdar_pan_no != null) ? $pattadar->pdar_pan_no : null,
+                    'pdar_citizen_no' => (isset($pattadar->pdar_citizen_no) && $pattadar->pdar_citizen_no != null) ? $pattadar->pdar_citizen_no : null,
+                    'pdar_gender' => (isset($pattadar->pdar_gender) && $pattadar->pdar_gender != null) ? $pattadar->pdar_gender : null,
+                    'user_code' => $pattadar->user_code,
+                    'date_entry' => $pattadar->date_entry,
+                    'operation' => $pattadar->operation,
+                    'jama_yn' => $pattadar->jama_yn,
+                ];
+                if ($this->db->field_exists('pdar_relation', 'chitha_pattadar') && isset($pattadar->pdar_relation) && $pattadar->pdar_relation != null) {
+                    $chithaPattadarArr['pdar_relation'] = $pattadar->pdar_relation;
+                }
+
+                $chithaPdarStatus = $this->db->insert('chitha_pattadar', $chithaPattadarArr);
+                if (!$chithaPdarStatus || $this->db->affected_rows() < 1) {
+                    throw new Exception('DB Error (chitha_pattadar): ' . $this->db->_error_message());
+                }
+            }
+
+            $dagPattadarArr = array(
                 'dist_code' => $dist_code,
                 'subdiv_code' => $subdiv_code,
                 'cir_code' => $cir_code,
@@ -453,93 +545,62 @@ class PartDagController extends CI_Controller
                 'pdar_id' => $pattadar->pdar_id,
                 'patta_no' => $pattadar->patta_no,
                 'patta_type_code' => $pattadar->patta_type_code,
-                'pdar_name' => $pattadar->pdar_name,
-                'pdar_guard_reln' => $pattadar->pdar_guard_reln,
-                'pdar_father' => $pattadar->pdar_father,
-                'pdar_add1' => (isset($pattadar->pdar_add1) && $pattadar->pdar_add1 != null) ? $pattadar->pdar_add1 : null,
-                'pdar_add2' => (isset($pattadar->pdar_add2) && $pattadar->pdar_add2 != null) ? $pattadar->pdar_add2 : null,
-                'pdar_add3' => (isset($pattadar->pdar_add3) && $pattadar->pdar_add3 != null) ? $pattadar->pdar_add3 : null,
-                'pdar_pan_no' => (isset($pattadar->pdar_pan_no) && $pattadar->pdar_pan_no != null) ? $pattadar->pdar_pan_no : null,
-                'pdar_citizen_no' => (isset($pattadar->pdar_citizen_no) && $pattadar->pdar_citizen_no != null) ? $pattadar->pdar_citizen_no : null,
-                'pdar_gender' => (isset($pattadar->pdar_gender) && $pattadar->pdar_gender != null) ? $pattadar->pdar_gender : null,
+                'dag_por_b' => $pattadar->dag_por_b,
+                'dag_por_k' => $pattadar->dag_por_k,
+                'dag_por_lc' => $pattadar->dag_por_lc,
+                'dag_por_g' => $pattadar->dag_por_g,
+                'dag_por_kr' => (isset($pattadar->dag_por_kr) && $pattadar->dag_por_kr != null) ? $pattadar->dag_por_kr : null,
+                'pdar_land_n' => (isset($pattadar->pdar_land_n) && $pattadar->pdar_land_n != null) ? $pattadar->pdar_land_n : null,
+                'pdar_land_s' => (isset($pattadar->pdar_land_s) && $pattadar->pdar_land_s != null) ? $pattadar->pdar_land_s : null,
+                'pdar_land_e' => (isset($pattadar->pdar_land_e) && $pattadar->pdar_land_e != null) ? $pattadar->pdar_land_e : null,
+                'pdar_land_w' => (isset($pattadar->pdar_land_w) && $pattadar->pdar_land_w != null) ? $pattadar->pdar_land_w : null,
+                'pdar_land_acre' => (isset($pattadar->pdar_land_acre) && $pattadar->pdar_land_acre != null) ? $pattadar->pdar_land_acre : null,
+                'pdar_land_revenue' => (isset($pattadar->pdar_land_revenue) && $pattadar->pdar_land_revenue != null) ? $pattadar->pdar_land_revenue : null,
+                'pdar_land_localtax' => (isset($pattadar->pdar_land_localtax) && $pattadar->pdar_land_localtax != null) ? $pattadar->pdar_land_localtax : null,
                 'user_code' => $pattadar->user_code,
                 'date_entry' => $pattadar->date_entry,
                 'operation' => $pattadar->operation,
-                'jama_yn' => $pattadar->jama_yn,
-            ];
-            if ($this->db->field_exists('pdar_relation', 'chitha_pattadar') && isset($pattadar->pdar_relation) && $pattadar->pdar_relation != null) {
-                $chithaPattadarArr['pdar_relation'] = $pattadar->pdar_relation;
+                'p_flag' => (isset($pattadar->p_flag) && $pattadar->p_flag != null) ? $pattadar->p_flag : null,
+                'jama_yn' => (isset($pattadar->jama_yn) && $pattadar->jama_yn != null) ? $pattadar->jama_yn : null,
+                'pdar_land_map' => (isset($pattadar->pdar_land_map) && $pattadar->pdar_land_map != null) ? $pattadar->pdar_land_map : null,
+            );
+            $checkDagPdar = $this->db->query("SELECT * FROM chitha_dag_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND patta_no=? AND patta_type_code=? AND dag_no=? AND pdar_id=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $pattadar->patta_no, $pattadar->patta_type_code, $pattadar->dag_no, $pattadar->pdar_id])->row();
+            if (empty($checkDagPdar)) {
+                $dagPattadarArr['dag_no'] = $pattadar->dag_no;
+                $dagPattadarStatus = $this->db->insert('chitha_dag_pattadar', $dagPattadarArr);
+                if (!$dagPattadarStatus || $this->db->affected_rows() < 1) {
+                    throw new Exception('DB Error (chitha_dag_pattadar): ' . $this->db->_error_message());
+                }
             }
-
-            $chithaPdarStatus = $this->db->insert('chitha_pattadar', $chithaPattadarArr);
-            if (!$chithaPdarStatus || $this->db->affected_rows() < 1) {
-                return false;
+            $checkPartDagPdar = $this->db->query("SELECT * FROM chitha_dag_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND patta_no=? AND patta_type_code=? AND dag_no=? AND pdar_id=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $pattadar->patta_no, $pattadar->patta_type_code, $part_dag, $pattadar->pdar_id])->row();
+            if (empty($checkPartDagPdar)) {
+                $dagPattadarArr['dag_no'] = $part_dag;
+                $dagPattadarStatus = $this->db->insert('chitha_dag_pattadar', $dagPattadarArr);
+                if (!$dagPattadarStatus || $this->db->affected_rows() < 1) {
+                    throw new Exception('DB Error (chitha_dag_pattadar part_dag): ' . $this->db->_error_message());
+                }
             }
+            return true;
+        } catch (Exception $e) {
+            log_message('error', 'Exception in insertPattadar: ' . $e->getMessage());
+            throw $e;
         }
-
-        $dagPattadarArr = array(
-            'dist_code' => $dist_code,
-            'subdiv_code' => $subdiv_code,
-            'cir_code' => $cir_code,
-            'mouza_pargona_code' => $mouza_pargona_code,
-            'lot_no' => $lot_no,
-            'vill_townprt_code' => $vill_townprt_code,
-            'pdar_id' => $pattadar->pdar_id,
-            'patta_no' => $pattadar->patta_no,
-            'patta_type_code' => $pattadar->patta_type_code,
-            'dag_por_b' => $pattadar->dag_por_b,
-            'dag_por_k' => $pattadar->dag_por_k,
-            'dag_por_lc' => $pattadar->dag_por_lc,
-            'dag_por_g' => $pattadar->dag_por_g,
-            'dag_por_kr' => (isset($pattadar->dag_por_kr) && $pattadar->dag_por_kr != null) ? $pattadar->dag_por_kr : null,
-            'pdar_land_n' => (isset($pattadar->pdar_land_n) && $pattadar->pdar_land_n != null) ? $pattadar->pdar_land_n : null,
-            'pdar_land_s' => (isset($pattadar->pdar_land_s) && $pattadar->pdar_land_s != null) ? $pattadar->pdar_land_s : null,
-            'pdar_land_e' => (isset($pattadar->pdar_land_e) && $pattadar->pdar_land_e != null) ? $pattadar->pdar_land_e : null,
-            'pdar_land_w' => (isset($pattadar->pdar_land_w) && $pattadar->pdar_land_w != null) ? $pattadar->pdar_land_w : null,
-            'pdar_land_acre' => (isset($pattadar->pdar_land_acre) && $pattadar->pdar_land_acre != null) ? $pattadar->pdar_land_acre : null,
-            'pdar_land_revenue' => (isset($pattadar->pdar_land_revenue) && $pattadar->pdar_land_revenue != null) ? $pattadar->pdar_land_revenue : null,
-            'pdar_land_localtax' => (isset($pattadar->pdar_land_localtax) && $pattadar->pdar_land_localtax != null) ? $pattadar->pdar_land_localtax : null,
-            'user_code' => $pattadar->user_code,
-            'date_entry' => $pattadar->date_entry,
-            'operation' => $pattadar->operation,
-            'p_flag' => (isset($pattadar->p_flag) && $pattadar->p_flag != null) ? $pattadar->p_flag : null,
-            'jama_yn' => (isset($pattadar->jama_yn) && $pattadar->jama_yn != null) ? $pattadar->jama_yn : null,
-            'pdar_land_map' => (isset($pattadar->pdar_land_map) && $pattadar->pdar_land_map != null) ? $pattadar->pdar_land_map : null,
-        );
-        $checkDagPdar = $this->db->query("SELECT * FROM chitha_dag_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND patta_no=? AND patta_type_code=? AND dag_no=? AND pdar_id=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $pattadar->patta_no, $pattadar->patta_type_code, $pattadar->dag_no, $pattadar->pdar_id])->row();
-        if (empty($checkDagPdar)) {
-            $dagPattadarArr['dag_no'] = $pattadar->dag_no;
-            $dagPattadarStatus = $this->db->insert('chitha_dag_pattadar', $dagPattadarArr);
-            if (!$dagPattadarStatus || $this->db->affected_rows() < 1) {
-                return false;
-            }
-        }
-        $checkPartDagPdar = $this->db->query("SELECT * FROM chitha_dag_pattadar WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND patta_no=? AND patta_type_code=? AND dag_no=? AND pdar_id=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $pattadar->patta_no, $pattadar->patta_type_code, $part_dag, $pattadar->pdar_id])->row();
-        if (empty($checkPartDagPdar)) {
-            $dagPattadarArr['dag_no'] = $part_dag;
-            $dagPattadarStatus = $this->db->insert('chitha_dag_pattadar', $dagPattadarArr);
-            if (!$dagPattadarStatus || $this->db->affected_rows() < 1) {
-                return false;
-            }
-        }
+          
     }
 
     public function getTenants()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+            
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -560,15 +621,13 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
         } else {
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
+            
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['dag_no']) || empty($_POST['dag_no']))
@@ -583,7 +642,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['api_key'];
+            
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
         }
@@ -652,19 +711,16 @@ class PartDagController extends CI_Controller
     public function submitPossessor()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+            
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -687,7 +743,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -702,12 +758,12 @@ class PartDagController extends CI_Controller
             $possessor_father_name_mut = $data->possessor_father_name_mut;
             $possessor_address_mut = $data->possessor_address_mut;
             $possessor_remark = $data->possessor_remark;
+            $possessor_gender = $data->possessor_gender;
+            $possessor_dob = $data->possessor_dob;
         } else {
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
+            
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['dag_no']) || empty($_POST['dag_no']))
@@ -730,7 +786,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['api_key'];
+            
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -745,6 +801,8 @@ class PartDagController extends CI_Controller
             $possessor_father_name_mut = $_POST['possessor_father_name_mut'];
             $possessor_address_mut = $_POST['possessor_address_mut'];
             $possessor_remark = $_POST['possessor_remark'];
+            $possessor_gender = $_POST['possessor_gender'];
+            $possessor_dob = $_POST['possessor_dob'];
         }
 
         // echo '<pre>';
@@ -810,7 +868,9 @@ class PartDagController extends CI_Controller
             'mut_possessor_father_name' => $possessor_father_name_mut,
             'mut_possessor_address' => $possessor_address_mut,
             'remarks' => $possessor_remark,
-            'user_code' => $payload->usercode,
+            'user_code' => $this->jwt_data->usercode,
+            'gender' => $possessor_gender,
+            'dob' => $possessor_dob,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ];
@@ -855,19 +915,16 @@ class PartDagController extends CI_Controller
     public function deletePossessor()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+            
             if (!isset($data->possessor) || $data->possessor == null)
                 $msg = $msg . " Missing Possessor,";
             if ($msg != null && !empty($msg)) {
@@ -880,14 +937,12 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            
             $possessor = $data->possessor;
         } else {
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
+            
             if (!isset($_POST['possessor']) || empty($_POST['possessor']))
                 $msg = $msg . " Missing Possessor,";
             if ($msg != null && !empty($msg)) {
@@ -900,7 +955,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['api_key'];
+            
             $possessor = $_POST['possessor'];
         }
 
@@ -951,19 +1006,16 @@ class PartDagController extends CI_Controller
     public function updatePartDag()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+            
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -982,7 +1034,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -992,12 +1044,11 @@ class PartDagController extends CI_Controller
             $dag_land_revenue = $data->dag_land_revenue ? $data->dag_land_revenue : 0;
             $dag_local_tax = $data->dag_local_tax ? $data->dag_local_tax : 0;
             $pattadars = $data->pattadars ? $data->pattadars : [];
+            $tenants = $data->tenants ? $data->tenants : [];
         } else {
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
+            
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
@@ -1016,7 +1067,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['api_key'];
+            
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -1027,6 +1078,7 @@ class PartDagController extends CI_Controller
             $dag_land_revenue = $_POST['dag_land_revenue'] ? $_POST['dag_land_revenue'] : 0;
             $dag_local_tax = $_POST['dag_local_tax'] ? $_POST['dag_local_tax'] : 0;
             $pattadars = $_POST['pattadars'] ? $_POST['pattadars'] : [];
+            $tenants = $_POST['tenants'] ? $_POST['tenants'] : [];
         }
 
         $villageCodeArr = explode('-',  $villageCode);
@@ -1231,18 +1283,43 @@ class PartDagController extends CI_Controller
         foreach ($input_pattadars as $input_pattadar) {
             if (!in_array($input_pattadar, $available_pattadars)) {
                 $pattadar = '';
-                foreach($pattadars as $pdar) {
+                foreach ($pattadars as $pdar) {
                     if ($pdar->value == $input_pattadar) {
                         $pattadar = $pdar;
                         break;
                     }
                 }
                 if (!empty($pattadar)) {
-                    $this->insertPattadar($pattadar, $part_dag);
+                   $is_inserted = $this->insertPattadar($pattadar, $part_dag);
+                    if (!$is_inserted) {
+                        $this->db->rollback();
+                        log_message('error', 'Error in inserting pattadar: ' . json_encode($pattadar));
+                        $response = [
+                            'status' => 'n',
+                            'msg' => 'Insertion Error in Pattadar!'
+                        ];
+                        $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                        echo json_encode($response);
+                        return;
+                    }
                 }
             }
         }
-
+        //insert into tenants
+        if (!empty($tenants) && count($tenants) > 0) {
+            $is_tenant_inserted = $this->insertTenant($tenants, $part_dag, $payload);
+            if (!$is_tenant_inserted) {
+                $this->db->trans_rollback();
+                log_message('error', 'Error in inserting tenant: ' . json_encode($tenants));
+                $response = [
+                    'status' => 'n',
+                    'msg' => 'Insertion Error in Tenant!'
+                ];
+                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                return;
+            }
+        }
         if (!$this->db->trans_status()) {
             $this->db->trans_rollback();
             $response = [
@@ -1267,19 +1344,16 @@ class PartDagController extends CI_Controller
     public function updatePartDagOld()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+            
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -1298,7 +1372,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -1310,10 +1384,8 @@ class PartDagController extends CI_Controller
             $pattadars = $data->pattadars ? $data->pattadars : [];
         } else {
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
+            
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
@@ -1332,7 +1404,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['api_key'];
+            
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -1582,7 +1654,7 @@ class PartDagController extends CI_Controller
                     'pdar_land_acre' => $chithaDagPattadar->pdar_land_acre,
                     'pdar_land_revenue' => $chithaDagPattadar->pdar_land_revenue,
                     'pdar_land_localtax' => $chithaDagPattadar->pdar_land_localtax,
-                    'user_code' => $payload->usercode,
+                    'user_code' => $this->jwt_data->usercode,
                     'date_entry' => date("Y-m-d | h:i:sa"),
                     'operation' => 'E',
                     'p_flag' => $chithaDagPattadar->p_flag,
@@ -1628,19 +1700,16 @@ class PartDagController extends CI_Controller
     public function deletePartDag()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters, ";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key, ";
+            
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code, ";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -1657,16 +1726,14 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
         } else {
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
+            
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['dag_no']) || empty($_POST['dag_no']))
@@ -1683,7 +1750,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['api_key'];
+            
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -1906,19 +1973,16 @@ class PartDagController extends CI_Controller
     public function submitPartDagOld()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        $payload = jwtdecode($authToken);
+        
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
+            
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+            
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -1939,7 +2003,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -1951,10 +2015,8 @@ class PartDagController extends CI_Controller
             $pattadars = $data->pattadars ? $data->pattadars : [];
         } else {
             $msg = null;
-            if (empty($payload))
-                $msg = "Unauthorized Token,";
-            if (!isset($_POST['api_key']) || empty($_POST['api_key']))
-                $msg = $msg . " Missing apikey,";
+            
+            
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
@@ -1973,7 +2035,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['api_key'];
+            
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -2145,7 +2207,7 @@ class PartDagController extends CI_Controller
             'dag_area_kr' => $getChithaDetails->dag_area_kr,
             'dag_nlrg_no' => (!empty($dag_nlrg_no)) ? $dag_nlrg_no : '',
             'dp_flag_yn' => $getChithaDetails->dp_flag_yn,
-            'user_code' => $payload->usercode,
+            'user_code' => $this->jwt_data->usercode,
             'date_entry' => date("Y-m-d | h:i:sa"),
             'old_patta_no' => $getChithaDetails->old_patta_no,
             'jama_yn' => $getChithaDetails->jama_yn,
@@ -2210,7 +2272,7 @@ class PartDagController extends CI_Controller
             'dag_area_kr' => $getChithaDetails->dag_area_kr,
             'dag_nlrg_no' => (!empty($dag_nlrg_no)) ? $dag_nlrg_no : '',
             'dp_flag_yn' => $getChithaDetails->dp_flag_yn,
-            'user_code' => $payload->usercode,
+            'user_code' => $this->jwt_data->usercode,
             'date_entry' => date("Y-m-d | h:i:sa"),
             'old_patta_no' => $getChithaDetails->old_patta_no,
             'jama_yn' => $getChithaDetails->jama_yn,
@@ -2322,7 +2384,7 @@ class PartDagController extends CI_Controller
                     'pdar_land_acre' => $chithaDagPattadar->pdar_land_acre,
                     'pdar_land_revenue' => $chithaDagPattadar->pdar_land_revenue,
                     'pdar_land_localtax' => $chithaDagPattadar->pdar_land_localtax,
-                    'user_code' => $payload->usercode,
+                    'user_code' => $this->jwt_data->usercode,
                     'date_entry' => date("Y-m-d | h:i:sa"),
                     'operation' => 'E',
                     'p_flag' => $chithaDagPattadar->p_flag,
@@ -2372,5 +2434,4 @@ class PartDagController extends CI_Controller
         echo json_encode($response);
         return;
     }
-    
 }

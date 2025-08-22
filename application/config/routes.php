@@ -73,6 +73,9 @@ $route['delete_part_dag'] = 'Api/PartDagController/deletePartDag';
 $route['get-master-data'] = 'Api/ResurveyDataController/getResurveyMasterData';
 $route['get-dag-data'] = 'Api/ResurveyDataController/getResurveyDagData';
 
+//reports
+$route['get-resurvey-report'] = 'Api/ResurveyReportController/getResurveyReportData';
+
 
 
 

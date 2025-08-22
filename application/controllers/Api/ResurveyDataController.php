@@ -5,16 +5,26 @@ include APPPATH . '/libraries/CommonTrait.php';
 class ResurveyDataController extends CI_Controller
 {
     use CommonTrait;
+    private $jwt_data;
+
     public function __construct()
     {
         parent::__construct();
+        $auth = validate_jwt();
+        if (!$auth['status']) {
+            $this->output
+                 ->set_status_header(401)
+                 ->set_content_type('application/json')
+                 ->set_output(json_encode(['error' => $auth['message']]))
+                 ->_display();
+            exit;
+        }
+
+        $this->jwt_data = $auth['data'];
     }
     public function getResurveyMasterData()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        jwtVerify($authToken);
-
         $request_data = json_decode(file_get_contents('php://input', true));
         $dist_code = $request_data->dist_code;
 
@@ -30,8 +40,6 @@ class ResurveyDataController extends CI_Controller
     public function getResurveyDagData()
     {
         $this->load->helper('cookie');
-        $authToken = $this->input->cookie('jwt_authorization', TRUE);
-        jwtVerify($authToken);
 
         $request_data = json_decode(file_get_contents('php://input', true));
 
@@ -169,4 +177,5 @@ class ResurveyDataController extends CI_Controller
         ]);
         return;
     }
+    
 }
