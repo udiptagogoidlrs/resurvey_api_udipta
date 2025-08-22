@@ -23,8 +23,8 @@ class LoginController extends CI_Controller
             $msg = null;
             if (!isset($data) || $data == null)
                 $msg = "Missing Parameters,";
-            if (!isset($data->api_key) || $data->api_key == null)
-                $msg = $msg . " Missing api_key,";
+            // if (!isset($data->api_key) || $data->api_key == null)
+            //     $msg = $msg . " Missing api_key,";
             if (!isset($data->user_name) || $data->user_name == null)
                 $msg = $msg . " Missing User Name";
             if (!isset($data->password) || $data->password == null)
@@ -39,14 +39,14 @@ class LoginController extends CI_Controller
                 exit;
             }
 
-            $apikey = $data->api_key;
+            // $apikey = $data->api_key;
             $user_name = $data->user_name;
             $password = $data->password;
         } else {
             $msg = null;
 
-            if (!isset($_POST['api_key']) || $_POST['api_key'] == null)
-                $msg = "Missing apikey,";
+            // if (!isset($_POST['api_key']) || $_POST['api_key'] == null)
+            //     $msg = "Missing apikey,";
             if (!isset($_POST['user_name']) || $_POST['user_name'] == null)
                 $msg = $msg . " Missing User Name";
             if (!isset($_POST['password']) || $_POST['password'] == null)
@@ -61,7 +61,7 @@ class LoginController extends CI_Controller
                 return;
             }
 
-            $apikey = $_POST['apikey'];
+            // $apikey = $_POST['apikey'];
             $user_name = $_POST['user_name'];
             $password = $_POST['password'];
         }
