@@ -20,7 +20,28 @@ class Welcome extends CI_Controller {
 	 */
 	public function index()
 	{
-		$this->load->view('location');
+		// Load routes.php
+		$routes_path = APPPATH . 'config/routes.php';
+		$routes = [];
+		if (file_exists($routes_path)) {
+			include($routes_path);
+			if (isset($route) && is_array($route)) {
+				foreach ($route as $key => $val) {
+					// Only include custom endpoints (skip default controller, 404_override, etc.)
+					if (!in_array($key, ['default_controller', '404_override', 'translate_uri_dashes'])) {
+						$routes[$key] = base_url($key);
+					}
+				}
+			}
+		}
+
+		$this->output
+			->set_content_type('application/json')
+			->set_output(json_encode([
+				'status' => 'success',
+				'message' => 'Welcome to the ChithaAPI service home page.',
+				'endpoints' => $routes
+			]));
 	}
 	
 	
