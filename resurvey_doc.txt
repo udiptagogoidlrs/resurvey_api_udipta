@@ -25,6 +25,10 @@ ALTER TABLE public.splitted_dags_possessors
     ADD COLUMN gender character varying(10),
     ADD COLUMN dob date
 
+ALTER TABLE public.splitted_dags_possessors
+    ADD COLUMN mobile_no VARCHAR(10),
+    ADD COLUMN aadhaar_no CHAR(12)
+
 ALTER TABLE public.chitha_dag_pattadar
     ADD COLUMN uuid bigint,
     ADD COLUMN created_on timestamp without time zone,
@@ -47,6 +51,14 @@ ALTER TABLE public.chitha_pattadar
 ALTER TABLE public.chitha_basic
     ADD COLUMN alpha_dag integer,
     ADD COLUMN alpha_patta integer
+
+ALTER TABLE public.chitha_basic
+    ADD COLUMN zonal_value numeric,
+    ADD COLUMN police_station character varying(300),
+    ADD COLUMN revenue_paid_upto character varying(20),
+    ADD COLUMN block_code character varying(20),
+    ADD COLUMN gp_code character varying(20)
+
 
 
 
