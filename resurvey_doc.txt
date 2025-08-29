@@ -98,3 +98,12 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public.splitted_dags_possessors
     OWNER to postgres;
+
+
+
+
+ALTER TABLE splitted_dags_possessors
+ADD COLUMN mobile_no VARCHAR(10),
+ADD COLUMN aadhaar_no CHAR(12);
+
+
