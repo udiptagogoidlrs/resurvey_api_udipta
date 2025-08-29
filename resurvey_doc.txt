@@ -44,6 +44,11 @@ ALTER TABLE public.chitha_pattadar
     ADD COLUMN marital_status character varying(200)
 
 
+ALTER TABLE public.chitha_basic
+    ADD COLUMN alpha_dag integer,
+    ADD COLUMN alpha_patta integer
+
+
 
 -- Table: public.splitted_dags_possessors
 
