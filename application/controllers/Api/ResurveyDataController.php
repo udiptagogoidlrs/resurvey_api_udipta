@@ -139,6 +139,7 @@ class ResurveyDataController extends CI_Controller
                 $row['current_land_class_ass'] = $chithaPartDag->land_class_name_ass ?? '';
                 $row['patta_type'] = $chithaPartDag->patta_type ?? '';
                 $row['patta_no'] = $chithaPartDag->patta_no ?? '';
+                $row['survey_no'] = $chithaPartDag->survey_no2 ?? '';
 
                 $partDagsForEntry[] = $row;
                 $checkPartDags[] = $part_dag;
@@ -163,6 +164,7 @@ class ResurveyDataController extends CI_Controller
                     $row['current_land_class_ass'] = $addedPartDag->land_class_name_ass ?? '';
                     $row['patta_type'] = $addedPartDag->patta_type ?? '';
                     $row['patta_no'] = $addedPartDag->patta_no ?? '';
+                    $row['survey_no'] = $addedPartDag->survey_no2 ?? '';
 
                     $partDagsForEntry[] = $row;
                 }

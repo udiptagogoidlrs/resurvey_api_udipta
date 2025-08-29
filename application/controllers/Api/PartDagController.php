@@ -70,6 +70,9 @@ class PartDagController extends CI_Controller
             $dag_local_tax = $data->dag_local_tax ? $data->dag_local_tax : 0;
             $pattadars = $data->pattadars ? $data->pattadars : [];
             $tenants = $data->tenants ? $data->tenants : [];
+
+            // $survey_no = $data->survey_no;
+
         } else {
             $msg = null;
             
@@ -105,8 +108,7 @@ class PartDagController extends CI_Controller
             $pattadars = $_POST['pattadars'] ? $_POST['pattadars'] : [];
             $tenants = $_POST['tenants'] ? $_POST['tenants'] : [];
 
-            // $user_name = $_POST['user_name'];
-            // $password = $_POST['password'];
+            // $survey_no = $_POST['survey_no'];
         }
 
         $villageCodeArr = explode('-',  $villageCode);
@@ -124,6 +126,7 @@ class PartDagController extends CI_Controller
         $dag_land_revenue = $dag_land_revenue;
         $dag_local_tax = $dag_local_tax;
         $pattadars = $pattadars;
+        // $survey_no = $survey_no;
 
 
         $this->dbswitch($dist_code);
@@ -283,7 +286,8 @@ class PartDagController extends CI_Controller
             'o_lessa' => $o_lessa,
             'o_ganda' => $o_ganda,
             'alpha_dag' => $alpha_dag,
-            'dag_area_sqmtr' => $area_sm
+            'dag_area_sqmtr' => $area_sm,
+            // 'survey_no2' => $survey_no
         ];
         $insertChithaSplittedStatus = $this->db->insert('chitha_basic_splitted_dags', $insertChithaSplittedArr);
         if (!$insertChithaSplittedStatus || $this->db->affected_rows() < 1) {
@@ -750,6 +754,7 @@ class PartDagController extends CI_Controller
             $possessor_name = $data->possessor_name;
             $possessor_guardian_name = $data->possessor_guardian_name;
             $possessor_guardian_relation = $data->possessor_guardian_relation;
+            $possessor_mobile_no = $data->possessor_mobile_no;
 
             //optional 
             $possessor_pattadar_relation = $data->possessor_pattadar_relation;
@@ -760,6 +765,7 @@ class PartDagController extends CI_Controller
             $possessor_remark = $data->possessor_remark;
             $possessor_gender = $data->possessor_gender;
             $possessor_dob = $data->possessor_dob;
+            $possessor_aadhaar = $data->possessor_aadhaar;
         } else {
             $msg = null;
             
@@ -793,6 +799,7 @@ class PartDagController extends CI_Controller
             $possessor_name = $_POST['possessor_name'];
             $possessor_guardian_name = $_POST['possessor_guardian_name'];
             $possessor_guardian_relation = $_POST['possessor_guardian_relation'];
+            $possessor_mobile_no = $_POST['possessor_mobile_no'];
 
             //optional 
             $possessor_pattadar_relation = $_POST['possessor_pattadar_relation'];
@@ -803,6 +810,7 @@ class PartDagController extends CI_Controller
             $possessor_remark = $_POST['possessor_remark'];
             $possessor_gender = $_POST['possessor_gender'];
             $possessor_dob = $_POST['possessor_dob'];
+            $possessor_aadhaar = $_POST['possessor_aadhaar'];
         }
 
         // echo '<pre>';
@@ -870,10 +878,14 @@ class PartDagController extends CI_Controller
             'remarks' => $possessor_remark,
             'user_code' => $this->jwt_data->usercode,
             'gender' => $possessor_gender,
-            'dob' => $possessor_dob,
             'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
+            'updated_at' => date('Y-m-d H:i:s'),
+            'mobile_no' => $possessor_mobile_no,
+            'aadhaar_no' => $possessor_aadhaar
         ];
+        if($possessor_dob != null && isset($possessor_dob) && $possessor_dob !== ''){
+            $insertArr['dob'] = date('Y-m-d', strtotime($possessor_dob));
+        }
 
         $insertStatus = $this->db->insert('splitted_dags_possessors', $insertArr);
 
@@ -1045,6 +1057,8 @@ class PartDagController extends CI_Controller
             $dag_local_tax = $data->dag_local_tax ? $data->dag_local_tax : 0;
             $pattadars = $data->pattadars ? $data->pattadars : [];
             $tenants = $data->tenants ? $data->tenants : [];
+
+            // $survey_no = $data->survey_no ? $data->survey_no : null;
         } else {
             $msg = null;
             
@@ -1079,6 +1093,8 @@ class PartDagController extends CI_Controller
             $dag_local_tax = $_POST['dag_local_tax'] ? $_POST['dag_local_tax'] : 0;
             $pattadars = $_POST['pattadars'] ? $_POST['pattadars'] : [];
             $tenants = $_POST['tenants'] ? $_POST['tenants'] : [];
+
+            // $survey_no = $_POST['survey_no'] ? $_POST['survey_no'] : null;
         }
 
         $villageCodeArr = explode('-',  $villageCode);
@@ -1088,6 +1104,7 @@ class PartDagController extends CI_Controller
         $mouza_pargona_code = $villageCodeArr[3];
         $lot_no = $villageCodeArr[4];
         $vill_townprt_code = $villageCodeArr[5];
+        // $survey_no = $survey_no ? $survey_no : null;
 
         $this->dbswitch($dist_code);
 
@@ -1165,7 +1182,8 @@ class PartDagController extends CI_Controller
             'dag_area_k' => $katha,
             'dag_area_lc' => $lessaChatak,
             'dag_area_g' => $ganda,
-            'dag_area_are' => $entered_total_dag_area
+            'dag_area_are' => $entered_total_dag_area,
+            // 'survey_no2' => $survey_no
         ];
         $this->db->where([
             'dist_code' => $dist_code,
