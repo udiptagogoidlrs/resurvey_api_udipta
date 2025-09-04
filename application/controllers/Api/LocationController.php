@@ -1109,19 +1109,18 @@ class LocationController extends CI_Controller
                     $guard_relation_name = (!empty($guard_relation_data)) ? $guard_relation_data->guard_rel_desc_as . ' (' . $guard_relation_data->guard_rel_desc . ')' : '';
                     $pattadar_relation_name = (!empty($pdar_relation_data)) ? $pdar_relation_data->guard_rel_desc_as . ' (' . $pdar_relation_data->guard_rel_desc . ')' : '';
 
-                    if ($mode_of_acquisition == 's') {
-                        $mode_of_acquisition_name = 'Sale';
-                    } else if ($mode_of_acquisition == 'm') {
-                        $mode_of_acquisition_name = 'Mortgage';
-                    } else if ($mode_of_acquisition == 'l') {
-                        $mode_of_acquisition_name = 'Lease';
-                    } else {
-                        $mode_of_acquisition_name = '';
+                    $mode_of_acquisition_name = '';
+                    foreach(TRANSFER_TYPES as $key => $t_type) {
+                        if($key == $mode_of_acquisition) {
+                            $mode_of_acquisition_name = $t_type;
+                            break;
+                        }
                     }
 
                     $possessor->guard_relation_name = $guard_relation_name;
                     $possessor->pattadar_relation_name = $pattadar_relation_name;
                     $possessor->mode_of_acquisition_name = $mode_of_acquisition_name;
+                    $possessor->ownership_documents = $this->db->query("select * from ownership_documents where possessor_u_id= ? ",[$possessor->possessor_u_id])->result();
                 }
             }
 

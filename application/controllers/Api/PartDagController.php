@@ -12,13 +12,14 @@ class PartDagController extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Api/PartDagModel');
+        $this->load->library('upload');
         $auth = validate_jwt();
         if (!$auth['status']) {
             $this->output
-                 ->set_status_header(401)
-                 ->set_content_type('application/json')
-                 ->set_output(json_encode(['error' => $auth['message']]))
-                 ->_display();
+                ->set_status_header(401)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['error' => $auth['message']]))
+                ->_display();
             exit;
         }
 
@@ -29,16 +30,16 @@ class PartDagController extends CI_Controller
     public function submitPartDag()
     {
         $this->load->helper('cookie');
-        
+
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            
+
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -59,7 +60,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            
+
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -75,8 +76,8 @@ class PartDagController extends CI_Controller
 
         } else {
             $msg = null;
-            
-            
+
+
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
@@ -95,7 +96,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            
+
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -411,7 +412,7 @@ class PartDagController extends CI_Controller
                 $is_inserted = $this->insertPattadar($pattadar, $part_dag);
                 if (!$is_inserted) {
                     $this->db->trans_rollback();
-                     log_message('error', 'Error in inserting pattadar: ' . json_encode($pattadar) . ' | DB Error: ' . $this->db->_error_message());
+                    log_message('error', 'Error in inserting pattadar: ' . json_encode($pattadar) . ' | DB Error: ' . $this->db->_error_message());
                     $response = [
                         'status' => 'n',
                         'msg' => 'Insertion Error in Pattadar!'
@@ -467,7 +468,8 @@ class PartDagController extends CI_Controller
         echo json_encode($response);
         return;
     }
-    private function insertTenant($tenants, $part_dag){
+    private function insertTenant($tenants, $part_dag)
+    {
         foreach ($tenants as $tenant) {
             $dist_code = $tenant->dist_code;
             $subdiv_code = $tenant->subdiv_code;
@@ -589,22 +591,21 @@ class PartDagController extends CI_Controller
             log_message('error', 'Exception in insertPattadar: ' . $e->getMessage());
             throw $e;
         }
-          
     }
 
     public function getTenants()
     {
         $this->load->helper('cookie');
-        
+
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            
+
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -625,13 +626,13 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            
+
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
         } else {
             $msg = null;
-            
-            
+
+
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['dag_no']) || empty($_POST['dag_no']))
@@ -646,7 +647,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            
+
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
         }
@@ -712,106 +713,289 @@ class PartDagController extends CI_Controller
         return;
     }
 
-    public function submitPossessor()
+    public function submitPossessorOld()
     {
-        $this->load->helper('cookie');
-        
+        if ($this->input->server('REQUEST_METHOD') !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['status' => 'error', 'message' => 'Method not allowed.']);
+            return;
+        }
 
         header('Content-Type: application/json');
-        if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
-            $data = json_decode(file_get_contents('php://input', true));
-            $msg = null;
-            
-            if (!isset($data) || $data == null)
-                $msg = $msg . " Missing Parameters,";
-            
-            if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
-                $msg = $msg . " Missing Village Code,";
-            if (!isset($data->dag_no) || $data->dag_no == null)
-                $msg = $msg . " Missing Dag no, ";
-            if (!isset($data->part_dag) || $data->part_dag == null)
-                $msg = $msg . " Missing Part Dag no, ";
-            if (!isset($data->possessor_name) || $data->possessor_name == null)
-                $msg = $msg . " Missing Possessor Name, ";
-            if (!isset($data->possessor_guardian_name) || $data->possessor_guardian_name == null)
-                $msg = $msg . " Missing Possessor Guardian Name, ";
-            if (!isset($data->possessor_guardian_relation) || $data->possessor_guardian_relation == null)
-                $msg = $msg . " Missing Possessor Guardian Relation ";
-            if ($msg != null && !empty($msg)) {
-                $response = [
-                    'status' => 'n',
-                    'msg' => $msg
-                ];
-                $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
-                echo json_encode($response);
-                exit;
-            }
 
-            
-            $villageCode = $data->vill_townprt_code;
-            $original_dag_no = $data->dag_no;
-            $part_dag = $data->part_dag;
-            $possessor_name = $data->possessor_name;
-            $possessor_guardian_name = $data->possessor_guardian_name;
-            $possessor_guardian_relation = $data->possessor_guardian_relation;
-            $possessor_mobile_no = $data->possessor_mobile_no;
+        $msg = null;
 
-            //optional 
-            $possessor_pattadar_relation = $data->possessor_pattadar_relation;
-            $possessor_mode_of_acquisition = $data->possessor_mode_of_acquisition;
-            $possessor_name_mut = $data->possessor_name_mut;
-            $possessor_father_name_mut = $data->possessor_father_name_mut;
-            $possessor_address_mut = $data->possessor_address_mut;
-            $possessor_remark = $data->possessor_remark;
-            $possessor_gender = $data->possessor_gender;
-            $possessor_dob = $data->possessor_dob;
-            $possessor_aadhaar = $data->possessor_aadhaar;
+        // Step 1: Validate all required fields directly from $_POST
+        if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code'])) {
+            $msg = $msg . " Missing Village Code,";
+        }
+        if (!isset($_POST['dag_no']) || empty($_POST['dag_no'])) {
+            $msg = $msg . " Missing Dag No, ";
+        }
+        if (!isset($_POST['part_dag']) || empty($_POST['part_dag'])) {
+            $msg = $msg . " Missing Part Dag No, ";
+        }
+        if (!isset($_POST['possessor_name']) || empty($_POST['possessor_name'])) {
+            $msg = $msg . " Missing Possessor Name, ";
+        }
+        if (!isset($_POST['possessor_guardian_name']) || empty($_POST['possessor_guardian_name'])) {
+            $msg = $msg . " Missing Possessor Guardian Name, ";
+        }
+        if (!isset($_POST['possessor_guardian_relation']) || empty($_POST['possessor_guardian_relation'])) {
+            $msg = $msg . " Missing Possessor Guardian Relation ";
+        }
+        if ($msg != null && !empty($msg)) {
+            $response = [
+                'status' => 'n',
+                'msg' => $msg
+            ];
+            $this->output->set_status_header(401);
+            echo json_encode($response);
+            return;
+        }
+
+        // Step 2: Parse and assign all form data
+        $villageCode = $_POST['vill_townprt_code'];
+        $original_dag_no = $_POST['dag_no'];
+        $part_dag = $_POST['part_dag'];
+        $possessor_name = $_POST['possessor_name'];
+        $possessor_guardian_name = $_POST['possessor_guardian_name'];
+        $possessor_guardian_relation = $_POST['possessor_guardian_relation'];
+        $possessor_mobile_no = $_POST['possessor_mobile_no'];
+
+        // Optional fields
+        $possessor_gender = isset($_POST['possessor_gender']) ? $_POST['possessor_gender'] : null;
+        $possessor_dob = isset($_POST['possessor_dob']) ? $_POST['possessor_dob'] : null;
+        $possessor_aadhaar = isset($_POST['possessor_aadhaar']) ? $_POST['possessor_aadhaar'] : null;
+        $possessor_email = isset($_POST['possessor_email']) ? $_POST['possessor_email'] : null;
+        $possessor_mode_of_acquisition = isset($_POST['possessor_mode_of_acquisition']) ? $_POST['possessor_mode_of_acquisition'] : null;
+        $possessor_name_mut = isset($_POST['possessor_name_mut']) ? $_POST['possessor_name_mut'] : null;
+        $possessor_father_name_mut = isset($_POST['possessor_father_name_mut']) ? $_POST['possessor_father_name_mut'] : null;
+        $possessor_address_mut = isset($_POST['possessor_address_mut']) ? $_POST['possessor_address_mut'] : null;
+        $possessor_remark = isset($_POST['possessor_remark']) ? $_POST['possessor_remark'] : null;
+        $possessor_pattadar_relation = isset($_POST['possessor_pattadar_relation']) ? $_POST['possessor_pattadar_relation'] : null;
+        $possessor_photo = isset($_POST['possessor_pattadar_relation']) ? $_POST['possessor_pattadar_relation'] : null;
+
+
+
+        $villageCodeArr = explode('-',  $villageCode);
+        $dist_code = $villageCodeArr[0];
+        $subdiv_code = $villageCodeArr[1];
+        $cir_code = $villageCodeArr[2];
+        $mouza_pargona_code = $villageCodeArr[3];
+        $lot_no = $villageCodeArr[4];
+        $vill_townprt_code = $villageCodeArr[5];
+
+        $possessor_pattadar_relation = (isset($possessor_pattadar_relation) && $possessor_pattadar_relation !== '') ? $possessor_pattadar_relation : null;
+        $possessor_mode_of_acquisition = (isset($possessor_mode_of_acquisition) && $possessor_mode_of_acquisition !== '') ? $possessor_mode_of_acquisition : null;
+        $possessor_name_mut = (isset($possessor_name_mut) && $possessor_name_mut !== '') ? $possessor_name_mut : null;
+        $possessor_father_name_mut = (isset($possessor_father_name_mut) && $possessor_father_name_mut !== '') ? $possessor_father_name_mut : null;
+        $possessor_address_mut = (isset($possessor_address_mut) && $possessor_address_mut !== '') ? $possessor_address_mut : null;
+        $possessor_remark = (isset($possessor_remark) && $possessor_remark !== '') ? $possessor_remark : null;
+
+
+        $this->dbswitch($dist_code);
+
+        $checkPartDag = $this->db->query('SELECT survey_no FROM chitha_basic_splitted_dags WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND survey_no=?', [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $original_dag_no, $part_dag])->row();
+        $checkChitha = $this->db->query('SELECT dag_no FROM chitha_basic WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?', [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $part_dag])->row();
+        if (empty($checkPartDag) || empty($checkChitha)) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Part Dag is not available yet!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        $max_possessor_id = $this->db->query("SELECT MAX(possessor_id) as possessor_id_max FROM splitted_dags_possessors WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND old_dag_no=? AND part_dag=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $original_dag_no, $part_dag])->row()->possessor_id_max;
+
+        if (!$max_possessor_id || empty($max_possessor_id)) {
+            $possessor_id = 1;
         } else {
-            $msg = null;
-            
-            
-            if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
-                $msg = $msg . " Missing Village Code,";
-            if (!isset($_POST['dag_no']) || empty($_POST['dag_no']))
-                $msg = $msg . " Missing Dag No, ";
-            if (!isset($_POST['part_dag']) || empty($_POST['part_dag']))
-                $msg = $msg . " Missing Part Dag No, ";
-            if (!isset($_POST['possessor_name']) || empty($_POST['possessor_name']))
-                $msg = $msg . " Missing Possessor Name, ";
-            if (!isset($_POST['possessor_guardian_name']) || empty($_POST['possessor_guardian_name']))
-                $msg = $msg . " Missing Possessor Guardian Name, ";
-            if (!isset($_POST['possessor_guardian_relation']) || empty($_POST['possessor_guardian_relation']))
-                $msg = $msg . " Missing Possessor Guardian Relation ";
-            if ($msg != null && !empty($msg)) {
+            $possessor_id = $max_possessor_id + 1;
+        }
+
+
+        $photo_path = null;
+        if ($possessor_photo != null && isset($possessor_photo) && $possessor_photo !== '') {
+            $photo_data = base64_decode($possessor_photo);
+            $photo_name = 'possessor_' . $dist_code . $subdiv_code . $cir_code . $mouza_pargona_code . $lot_no . $vill_townprt_code . '_' . $possessor_id . '_' . time() . '.jpg';
+            $photo_path = 'uploads/possessors/' . $photo_name;
+            if (!file_put_contents($photo_path, $photo_data)) {
+                log_message('error', 'Could not save possessor photo!');
                 $response = [
                     'status' => 'n',
-                    'msg' => $msg
+                    'msg' => 'Could not save possessor photo!'
                 ];
-                $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
                 echo json_encode($response);
                 return;
             }
-
-            
-            $villageCode = $_POST['vill_townprt_code'];
-            $original_dag_no = $_POST['dag_no'];
-            $part_dag = $_POST['part_dag'];
-            $possessor_name = $_POST['possessor_name'];
-            $possessor_guardian_name = $_POST['possessor_guardian_name'];
-            $possessor_guardian_relation = $_POST['possessor_guardian_relation'];
-            $possessor_mobile_no = $_POST['possessor_mobile_no'];
-
-            //optional 
-            $possessor_pattadar_relation = $_POST['possessor_pattadar_relation'];
-            $possessor_mode_of_acquisition = $_POST['possessor_mode_of_acquisition'];
-            $possessor_name_mut = $_POST['possessor_name_mut'];
-            $possessor_father_name_mut = $_POST['possessor_father_name_mut'];
-            $possessor_address_mut = $_POST['possessor_address_mut'];
-            $possessor_remark = $_POST['possessor_remark'];
-            $possessor_gender = $_POST['possessor_gender'];
-            $possessor_dob = $_POST['possessor_dob'];
-            $possessor_aadhaar = $_POST['possessor_aadhaar'];
         }
+        // Step 4: Handle Dynamic Documents
+        $documents_data = [];
+        $i = 0;
+
+        while ($this->input->post('document_metadata_' . $i) !== NULL) {
+            $doc_metadata_json = $this->input->post('document_metadata_' . $i);
+            $doc_metadata = json_decode($doc_metadata_json, true);
+            $doc_file_name = null;
+
+            $doc_config['upload_path']   = 'uploads/documents/';
+            $doc_config['allowed_types'] = 'pdf|jpg|jpeg|png';
+            $doc_config['max_size']      = 5120;
+            $doc_config['encrypt_name']  = TRUE;
+
+            $this->upload->initialize($doc_config);
+
+            if (!empty($_FILES['document_file_' . $i]['name'])) {
+                if ($this->upload->do_upload('document_file_' . $i)) {
+                    $data = $this->upload->data();
+                    $doc_file_name = $data['file_name'];
+                } else {
+                    log_message('error', 'Document upload failed: ' . $this->upload->display_errors());
+                }
+            }
+
+            $doc_metadata['file_name'] = $doc_file_name;
+            $documents_data[] = $doc_metadata;
+
+            $i++;
+        }
+
+        echo json_encode($photo_path);
+        die;
+
+
+
+        $possessor_u_id = 'P' . $dist_code . $subdiv_code . $cir_code . $mouza_pargona_code . $lot_no . $vill_townprt_code . $original_dag_no . $part_dag . $possessor_id . time();
+
+        $this->db->trans_begin();
+
+        $insertArr = [
+            'dist_code' => $dist_code,
+            'subdiv_code' => $subdiv_code,
+            'cir_code' => $cir_code,
+            'mouza_pargona_code' => $mouza_pargona_code,
+            'lot_no' => $lot_no,
+            'vill_townprt_code' => $vill_townprt_code,
+            'old_dag_no' => $original_dag_no,
+            'part_dag' => $part_dag,
+            'possessor_id' => $possessor_id,
+            'name' => $possessor_name,
+            'guard_name' => $possessor_guardian_name,
+            'guard_relation' => $possessor_guardian_relation,
+            'pattadar_relation' => $possessor_pattadar_relation,
+            'mode_of_acquisition' => $possessor_mode_of_acquisition,
+            'mut_possessor_name' => $possessor_name_mut,
+            'mut_possessor_father_name' => $possessor_father_name_mut,
+            'mut_possessor_address' => $possessor_address_mut,
+            'remarks' => $possessor_remark,
+            'user_code' => $this->jwt_data->usercode,
+            'gender' => $possessor_gender,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+            'mobile_no' => $possessor_mobile_no,
+            'aadhaar_no' => $possessor_aadhaar,
+            'email' => $possessor_email,
+            'photo_path' => $photo_path,
+            'possessor_u_id' => $possessor_u_id
+        ];
+        if ($possessor_dob != null && isset($possessor_dob) && $possessor_dob !== '') {
+            $insertArr['dob'] = date('Y-m-d', strtotime($possessor_dob));
+        }
+
+        $insertStatus = $this->db->insert('splitted_dags_possessors', $insertArr);
+
+        if (!$insertStatus || $this->db->affected_rows() < 1) {
+            log_message('error', 'Could not be inserted into splitted_dags_possessors!');
+            $this->db->trans_rollback();
+            $response = [
+                'status' => 'n',
+                'msg' => 'Could not be added!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        if (!$this->db->trans_status()) {
+            log_message('error', 'DB Transaction Failed!');
+            $this->db->trans_rollback();
+            $response = [
+                'status' => 'n',
+                'msg' => 'DB Transaction Failed!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        $this->db->trans_commit();
+
+        $response = [
+            'status' => 'y',
+            'msg' => 'Successfully added possessor!'
+        ];
+        $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
+        echo json_encode($response);
+        return;
+    }
+    public function submitPossessor()
+    {
+        $this->load->helper('cookie');
+
+
+        header('Content-Type: application/json');
+
+        $msg = null;
+
+
+        if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
+            $msg = $msg . " Missing Village Code,";
+        if (!isset($_POST['dag_no']) || empty($_POST['dag_no']))
+            $msg = $msg . " Missing Dag No, ";
+        if (!isset($_POST['part_dag']) || empty($_POST['part_dag']))
+            $msg = $msg . " Missing Part Dag No, ";
+        if (!isset($_POST['possessor_name']) || empty($_POST['possessor_name']))
+            $msg = $msg . " Missing Possessor Name, ";
+        if (!isset($_POST['possessor_guardian_name']) || empty($_POST['possessor_guardian_name']))
+            $msg = $msg . " Missing Possessor Guardian Name, ";
+        if (!isset($_POST['possessor_guardian_relation']) || empty($_POST['possessor_guardian_relation']))
+            $msg = $msg . " Missing Possessor Guardian Relation ";
+        if ($msg != null && !empty($msg)) {
+            $response = [
+                'status' => 'n',
+                'msg' => $msg
+            ];
+            $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+
+        $villageCode = $_POST['vill_townprt_code'];
+        $original_dag_no = $_POST['dag_no'];
+        $part_dag = $_POST['part_dag'];
+        $possessor_name = $_POST['possessor_name'];
+        $possessor_guardian_name = $_POST['possessor_guardian_name'];
+        $possessor_guardian_relation = $_POST['possessor_guardian_relation'];
+        $possessor_mobile_no = $_POST['possessor_mobile_no'];
+
+        //optional 
+        $possessor_pattadar_relation = $_POST['possessor_pattadar_relation'];
+        $possessor_mode_of_acquisition = $_POST['possessor_mode_of_acquisition'];
+        $possessor_name_mut = $_POST['possessor_name_mut'];
+        $possessor_father_name_mut = $_POST['possessor_father_name_mut'];
+        $possessor_address_mut = $_POST['possessor_address_mut'];
+        $possessor_remark = $_POST['possessor_remark'];
+        $possessor_gender = $_POST['possessor_gender'];
+        $possessor_dob = $_POST['possessor_dob'];
+        $possessor_aadhaar = $_POST['possessor_aadhaar'];
+        $possessor_email = $_POST['possessor_email'];
+        $possessor_photo = isset($_POST['possessor_photo']) ? $_POST['possessor_photo'] : '';
+
 
         // echo '<pre>';
         // var_dump($possessor_pattadar_relation);
@@ -855,6 +1039,27 @@ class PartDagController extends CI_Controller
             $possessor_id = $max_possessor_id + 1;
         }
 
+        $photo_path = '';
+        if ($possessor_photo != null && isset($possessor_photo) && $possessor_photo !== '') {
+            $photo_data = base64_decode($possessor_photo);
+            $photo_name = 'possessor_' . $dist_code . $subdiv_code . $cir_code . $mouza_pargona_code . $lot_no . $vill_townprt_code . '_' . $possessor_id . '_' . time() . '.jpg';
+            $photo_path = 'uploads/possessors/' . $photo_name;
+            if (!file_put_contents($photo_path, $photo_data)) {
+                log_message('error', 'Could not save possessor photo!');
+                $response = [
+                    'status' => 'n',
+                    'msg' => 'Could not save possessor photo!'
+                ];
+                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                return;
+            }
+        }
+
+
+
+        $possessor_u_id = 'P' . $dist_code . $subdiv_code . $cir_code . $mouza_pargona_code . $lot_no . $vill_townprt_code . $original_dag_no . $part_dag . $possessor_id . time();
+
         $this->db->trans_begin();
 
         $insertArr = [
@@ -881,9 +1086,12 @@ class PartDagController extends CI_Controller
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
             'mobile_no' => $possessor_mobile_no,
-            'aadhaar_no' => $possessor_aadhaar
+            'aadhaar_no' => $possessor_aadhaar,
+            'email' => $possessor_email,
+            'photo_path' => $photo_path,
+            'possessor_u_id' => $possessor_u_id
         ];
-        if($possessor_dob != null && isset($possessor_dob) && $possessor_dob !== ''){
+        if ($possessor_dob != null && isset($possessor_dob) && $possessor_dob !== '') {
             $insertArr['dob'] = date('Y-m-d', strtotime($possessor_dob));
         }
 
@@ -913,6 +1121,57 @@ class PartDagController extends CI_Controller
             return;
         }
 
+        $documents_data = [];
+        $i = 0;
+
+        while (isset($_POST['document_metadata_' . $i])) {
+            $doc_metadata_json = $_POST['document_metadata_' . $i];
+            $doc_metadata = json_decode($doc_metadata_json, true);
+
+            $doc_file_name = null;
+
+            if (isset($_FILES['document_file_' . $i]) && is_uploaded_file($_FILES['document_file_' . $i]['tmp_name'])) {
+                $document_file = $_FILES['document_file_' . $i];
+
+                $upload_path = FCPATH . 'uploads/documents/';
+                if (!is_dir($upload_path)) {
+                    mkdir($upload_path, 0777, true);
+                }
+
+                $ext = pathinfo($document_file['name'], PATHINFO_EXTENSION);
+                $doc_file_name = uniqid('doc_') . '.' . $ext;
+
+                if (move_uploaded_file($document_file['tmp_name'], $upload_path . $doc_file_name)) {
+                    $doc_metadata['file_name'] = $doc_file_name;
+                    $doc_metadata['file_path'] = 'uploads/documents/' . $doc_file_name; // relative path
+                } else {
+                    $doc_metadata['file_name'] = null; // failed upload
+                }
+            } else {
+                $doc_metadata['file_name'] = null;
+            }
+
+            $documents_data[] = $doc_metadata;
+
+            $i++;
+        }
+
+        foreach ($documents_data as $doc) {
+            $insert_data = [
+                'possessor_u_id'   => $possessor_u_id,
+                'document_name'    => $doc['document_name'],
+                'document_no'      => $doc['document_no'],
+                'issuing_authority' => isset($doc['issuing_authority']) ? $doc['issuing_authority'] : null,
+                'issuing_address'  => isset($doc['issuing_address']) ? $doc['issuing_address'] : null,
+                'document_issue_date' => isset($doc['document_issue_date']) ? $doc['document_issue_date'] : null,
+                'file_path'        => isset($doc['file_path']) ? $doc['file_path'] : null,
+                'file_type'        => isset($doc['file_type']) ? $doc['file_type'] : null,
+                'file_size'        => isset($doc['file_size']) ? $doc['file_size'] : null,
+            ];
+
+            $this->db->insert('ownership_documents', $insert_data);
+        }
+
         $this->db->trans_commit();
 
         $response = [
@@ -927,16 +1186,16 @@ class PartDagController extends CI_Controller
     public function deletePossessor()
     {
         $this->load->helper('cookie');
-        
+
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            
+
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            
+
             if (!isset($data->possessor) || $data->possessor == null)
                 $msg = $msg . " Missing Possessor,";
             if ($msg != null && !empty($msg)) {
@@ -949,12 +1208,12 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            
+
             $possessor = $data->possessor;
         } else {
             $msg = null;
-            
-            
+
+
             if (!isset($_POST['possessor']) || empty($_POST['possessor']))
                 $msg = $msg . " Missing Possessor,";
             if ($msg != null && !empty($msg)) {
@@ -967,7 +1226,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            
+
             $possessor = $_POST['possessor'];
         }
 
@@ -1018,16 +1277,16 @@ class PartDagController extends CI_Controller
     public function updatePartDag()
     {
         $this->load->helper('cookie');
-        
+
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            
+
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -1046,7 +1305,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            
+
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -1061,8 +1320,8 @@ class PartDagController extends CI_Controller
             // $survey_no = $data->survey_no ? $data->survey_no : null;
         } else {
             $msg = null;
-            
-            
+
+
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
@@ -1081,7 +1340,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            
+
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -1308,7 +1567,7 @@ class PartDagController extends CI_Controller
                     }
                 }
                 if (!empty($pattadar)) {
-                   $is_inserted = $this->insertPattadar($pattadar, $part_dag);
+                    $is_inserted = $this->insertPattadar($pattadar, $part_dag);
                     if (!$is_inserted) {
                         $this->db->rollback();
                         log_message('error', 'Error in inserting pattadar: ' . json_encode($pattadar));
@@ -1362,16 +1621,16 @@ class PartDagController extends CI_Controller
     public function updatePartDagOld()
     {
         $this->load->helper('cookie');
-        
+
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            
+
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -1390,7 +1649,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            
+
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -1402,8 +1661,8 @@ class PartDagController extends CI_Controller
             $pattadars = $data->pattadars ? $data->pattadars : [];
         } else {
             $msg = null;
-            
-            
+
+
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
@@ -1422,7 +1681,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            
+
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -1718,16 +1977,16 @@ class PartDagController extends CI_Controller
     public function deletePartDag()
     {
         $this->load->helper('cookie');
-        
+
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            
+
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters, ";
-            
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code, ";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -1744,14 +2003,14 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            
+
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
         } else {
             $msg = null;
-            
-            
+
+
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['dag_no']) || empty($_POST['dag_no']))
@@ -1768,7 +2027,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            
+
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
@@ -1991,16 +2250,16 @@ class PartDagController extends CI_Controller
     public function submitPartDagOld()
     {
         $this->load->helper('cookie');
-        
+
 
         header('Content-Type: application/json');
         if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
             $data = json_decode(file_get_contents('php://input', true));
             $msg = null;
-            
+
             if (!isset($data) || $data == null)
                 $msg = $msg . " Missing Parameters,";
-            
+
             if (!isset($data->vill_townprt_code) || $data->vill_townprt_code == null)
                 $msg = $msg . " Missing Village Code,";
             if (!isset($data->dag_no) || $data->dag_no == null)
@@ -2021,7 +2280,7 @@ class PartDagController extends CI_Controller
                 exit;
             }
 
-            
+
             $villageCode = $data->vill_townprt_code;
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
@@ -2033,8 +2292,8 @@ class PartDagController extends CI_Controller
             $pattadars = $data->pattadars ? $data->pattadars : [];
         } else {
             $msg = null;
-            
-            
+
+
             if (!isset($_POST['vill_townprt_code']) || empty($_POST['vill_townprt_code']))
                 $msg = $msg . " Missing Village Code,";
             if (!isset($_POST['land_class_code']) || empty($_POST['land_class_code']))
@@ -2053,7 +2312,7 @@ class PartDagController extends CI_Controller
                 return;
             }
 
-            
+
             $villageCode = $_POST['vill_townprt_code'];
             $original_dag_no = $_POST['dag_no'];
             $part_dag = $_POST['part_dag'];
