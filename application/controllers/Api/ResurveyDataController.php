@@ -13,30 +13,85 @@ class ResurveyDataController extends CI_Controller
         $auth = validate_jwt();
         if (!$auth['status']) {
             $this->output
-                 ->set_status_header(401)
-                 ->set_content_type('application/json')
-                 ->set_output(json_encode(['error' => $auth['message']]))
-                 ->_display();
+                ->set_status_header(401)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['error' => $auth['message']]))
+                ->_display();
             exit;
         }
 
         $this->jwt_data = $auth['data'];
     }
+    // public function getResurveyMasterData()
+    // {
+    //     $this->load->helper('cookie');
+    //     $request_data = json_decode(file_get_contents('php://input', true));
+    //     $dist_code = $request_data->dist_code;
+
+    //     header('Content-Type: application/json');
+    //     $data = [];
+    //     $url = LANDHUB_BASE_URL . "api/resurvey/v1/masterdata";
+    //     $method = 'POST';
+    //     $data['dist_code'] = $dist_code;
+    //     $data['apikey'] = LANDHUB_APIKEY;
+    //     $api_output = callApiV2($url, $method, $data);
+    //     echo ($api_output);
+    // }
     public function getResurveyMasterData()
     {
         $this->load->helper('cookie');
-        $request_data = json_decode(file_get_contents('php://input', true));
+
+        $raw_input = file_get_contents("php://input");
+        $request_data = json_decode($raw_input);
+
+        if (!$request_data || !isset($request_data->dist_code)) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                "success" => false,
+                "message" => "Invalid request: dist_code missing"
+            ]);
+            return;
+        }
+
         $dist_code = $request_data->dist_code;
 
-        header('Content-Type: application/json');
-        $data = [];
         $url = LANDHUB_BASE_URL . "api/resurvey/v1/masterdata";
         $method = 'POST';
-        $data['dist_code'] = $dist_code;
-        $data['apikey'] = LANDHUB_APIKEY;
+        $data = [
+            "dist_code" => $dist_code,
+            "apikey"    => LANDHUB_APIKEY
+        ];
+
         $api_output = callApiV2($url, $method, $data);
-        echo ($api_output);
+
+        if (is_string($api_output)) {
+            $api_output = json_decode($api_output, true);
+        }
+
+        $masterData = [];
+        if (isset($api_output['data'])) {
+            $masterData = $api_output['data']; 
+        }
+        $transfer_types = [];
+        foreach (TRANSFER_TYPES as $key => $value) {
+            $transfer_types[] = [
+                "value" => $key,
+                "label" => $value
+            ];
+        }
+        $masterData['transfer_types'] = $transfer_types;
+        $status  = $api_output['status']  ?? null;
+        $message = $api_output['msg'] ?? null;
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            "status"  => $status,
+            "message" => $message,
+            "data" => $masterData
+        ]);
     }
+
+
     public function getResurveyDagData()
     {
         $this->load->helper('cookie');
@@ -179,5 +234,4 @@ class ResurveyDataController extends CI_Controller
         ]);
         return;
     }
-    
 }
