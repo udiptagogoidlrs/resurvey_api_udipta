@@ -88,6 +88,8 @@ CREATE TABLE IF NOT EXISTS public.splitted_dags_possessors
     user_code character varying(5) COLLATE pg_catalog."default",
     gender character varying(10) COLLATE pg_catalog."default",
     dob date,
+    email character varying(255),
+    photo_path character varying(255),
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
     remarks text COLLATE pg_catalog."default",
@@ -100,6 +102,18 @@ ALTER TABLE IF EXISTS public.splitted_dags_possessors
     OWNER to postgres;
 
 
+//new user activity log table schema
+CREATE TABLE IF NOT EXISTS public.user_activity_logs (
+    id BIGSERIAL PRIMARY KEY,
+    user_code VARCHAR(5) NOT NULL,
+    activity TEXT NOT NULL,
+    action_type VARCHAR(50),            -- e.g. LOGIN, UPDATE, DELETE
+    ip_address INET,                    -- IP address of the user
+    user_agent TEXT,                    -- browser / device details
+    metadata JSONB,                     -- extra info (optional)
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+);
+
 
 
 ALTER TABLE splitted_dags_possessors
@@ -107,3 +121,30 @@ ADD COLUMN mobile_no VARCHAR(10),
 ADD COLUMN aadhaar_no CHAR(12);
 
 
+
+
+
+//add col to splitted_dags_possessors
+ALTER TABLE public.splitted_dags_possessors
+ADD COLUMN possessor_u_id VARCHAR(40);
+
+//ownership documents
+
+CREATE TABLE IF NOT EXISTS public.ownership_documents (
+    id BIGSERIAL PRIMARY KEY,
+
+    possessor_u_id VARCHAR(40) NOT NULL,
+
+    document_name VARCHAR(150) NOT NULL,      -- e.g. Sale Deed, Gift Deed, Will, Court Order
+    document_no VARCHAR(100) NOT NULL,        -- Document/Deed number
+    issuing_authority VARCHAR(200),           -- Issuing Authority name
+    issuing_address TEXT,                     -- Issuing Authority address
+    document_issue_date DATE,                 -- Date of issue/registration
+
+    file_path TEXT,                           -- Path to uploaded file (PDF/JPG)
+    file_type VARCHAR(20),                    -- MIME type (pdf, jpg, png)
+    file_size BIGINT,                         -- File size in bytes
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
