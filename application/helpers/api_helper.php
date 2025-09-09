@@ -378,7 +378,6 @@ function callIlrmsApi2($url, $method = 'GET', $data = null)
     $response = curl_exec($curl);
     curl_close($curl);
     return json_decode($response);
-
 }
 
 function callBhunakshaApiForProcessMap($data, $method = 'POST')
@@ -411,15 +410,14 @@ function callBhunakshaApiForProcessMap($data, $method = 'POST')
     $response = curl_exec($curl);
     log_message('error', $response);
     $success = false;
-    if(!curl_errno($curl)){
+    if (!curl_errno($curl)) {
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        if(in_array($http_code, [200, 201])){
+        if (in_array($http_code, [200, 201])) {
             $success = true;
         }
     }
     curl_close($curl);
-    return ['success' => $success, 'data' =>json_decode($response)];
-
+    return ['success' => $success, 'data' => json_decode($response)];
 }
 
 function callBhunakshaApiForShpProcessMap($data, $method = 'POST')
@@ -452,15 +450,14 @@ function callBhunakshaApiForShpProcessMap($data, $method = 'POST')
     $response = curl_exec($curl);
     log_message('error', $response);
     $success = false;
-    if(!curl_errno($curl)){
+    if (!curl_errno($curl)) {
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        if(in_array($http_code, [200, 201])){
+        if (in_array($http_code, [200, 201])) {
             $success = true;
         }
     }
     curl_close($curl);
-    return ['success' => $success, 'data' =>json_decode($response)];
-
+    return ['success' => $success, 'data' => json_decode($response)];
 }
 
 function callBhunakshaApiForUpdateProcessMap($data, $method = 'POST')
@@ -493,15 +490,14 @@ function callBhunakshaApiForUpdateProcessMap($data, $method = 'POST')
     $response = curl_exec($curl);
     log_message('error', $response);
     $success = false;
-    if(!curl_errno($curl)){
+    if (!curl_errno($curl)) {
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        if(in_array($http_code, [200, 201])){
+        if (in_array($http_code, [200, 201])) {
             $success = true;
         }
     }
     curl_close($curl);
-    return ['success' => $success, 'data' =>json_decode($response)];
-
+    return ['success' => $success, 'data' => json_decode($response)];
 }
 
 function callBhunakshaApiForUpdateShpProcessMap($data, $method = 'POST')
@@ -534,15 +530,14 @@ function callBhunakshaApiForUpdateShpProcessMap($data, $method = 'POST')
     $response = curl_exec($curl);
     log_message('error', $response);
     $success = false;
-    if(!curl_errno($curl)){
+    if (!curl_errno($curl)) {
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        if(in_array($http_code, [200, 201])){
+        if (in_array($http_code, [200, 201])) {
             $success = true;
         }
     }
     curl_close($curl);
-    return ['success' => $success, 'data' =>json_decode($response)];
-
+    return ['success' => $success, 'data' => json_decode($response)];
 }
 
 function callBhunakshaApiForFetchingMapGeo($data, $method = 'GET')
@@ -574,18 +569,17 @@ function callBhunakshaApiForFetchingMapGeo($data, $method = 'GET')
 
     $response = curl_exec($curl);
     $success = false;
-    if(!curl_errno($curl)){
+    if (!curl_errno($curl)) {
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        if(in_array($http_code, [200, 201])){
+        if (in_array($http_code, [200, 201])) {
             $success = true;
         }
     }
     curl_close($curl);
-    return ['success' => $success, 'data' =>json_decode($response)];
-
+    return ['success' => $success, 'data' => json_decode($response)];
 }
 
-function callApiV2($url,$method, $data=null)
+function callApiV2($url, $method, $data = null)
 {
     $curl = curl_init();
 
@@ -612,14 +606,69 @@ function callApiV2($url,$method, $data=null)
     $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
     curl_close($curl);
-    if($httpcode != 200)
-    {
+    if ($httpcode != 200) {
         log_message("error", 'API FAIL');
         return false;
     }
 
     return $response;
 }
+function callApiV3($url, $method = 'POST', $data = null, $extraHeaders = [])
+{
+    $curl = curl_init();
+
+    // Default headers
+    $headers = [
+        'Content-Type: application/json',
+        'Accept: application/json'
+    ];
+
+    // Merge with any extra headers you pass
+    if (!empty($extraHeaders)) {
+        $headers = array_merge($headers, $extraHeaders);
+    }
+
+    $options = [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => strtoupper($method),
+        CURLOPT_HTTPHEADER => $headers,
+    ];
+
+    if (!empty($data)) {
+        // Ensure it's JSON
+        if (is_array($data)) {
+            $data = json_encode($data, JSON_UNESCAPED_SLASHES);
+        }
+        $options[CURLOPT_POSTFIELDS] = $data;
+    }
+
+    curl_setopt_array($curl, $options);
+
+    $response = curl_exec($curl);
+    $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+    if (curl_errno($curl)) {
+        log_message("error", 'cURL Error: ' . curl_error($curl));
+        curl_close($curl);
+        return false;
+    }
+
+    curl_close($curl);
+
+    if ($httpcode < 200 || $httpcode >= 300) {
+        log_message("error", "API FAIL ({$httpcode}): " . $response);
+        return false;
+    }
+
+    return $response;
+}
+
 
 function callLandhubAPIMerge($method, $url, $data)
 {
@@ -718,8 +767,7 @@ function callLandhubAPIWithHeader($method, $url, $data)
             'http_status' => curl_getinfo($curl, CURLINFO_HTTP_CODE),
             'data' => ''
         ];
-    }
-    else {
+    } else {
         $resp = [
             'error' => '',
             'http_status' => curl_getinfo($curl, CURLINFO_HTTP_CODE),

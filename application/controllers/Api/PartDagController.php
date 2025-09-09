@@ -48,6 +48,8 @@ class PartDagController extends CI_Controller
                 $msg = $msg . " Missing Part Dag no, ";
             if (!isset($data->land_class_code) || $data->land_class_code == null)
                 $msg = $msg . " Missing Current Land Class";
+            if (!isset($data->bhunaksha_survey_no) || $data->bhunaksha_survey_no == null)
+                $msg = $msg . " Missing Survey Number";
             // if (!isset($data->area_sm) || $data->area_sm == null)
             //     $msg = $msg . " Missing Area";
             if ($msg != null && !empty($msg)) {
@@ -65,6 +67,7 @@ class PartDagController extends CI_Controller
             $original_dag_no = $data->dag_no;
             $part_dag = $data->part_dag;
             $landClassCode = $data->land_class_code;
+            $bhunaksha_survey_no = $data->bhunaksha_survey_no;
 
             $areaSm = $data->area_sm ? $data->area_sm : 0;
             $dag_land_revenue = $data->dag_land_revenue ? $data->dag_land_revenue : 0;
@@ -86,6 +89,8 @@ class PartDagController extends CI_Controller
                 $msg = $msg . " Missing Dag No ";
             if (!isset($_POST['part_dag']) || empty($_POST['part_dag']))
                 $msg = $msg . " Missing Part Dag No ";
+            if (!isset($_POST['bhunaksha_survey_no']) || empty($_POST['bhunaksha_survey_no']))
+                $msg = $msg . " Missing Survey Number ";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
@@ -109,7 +114,7 @@ class PartDagController extends CI_Controller
             $pattadars = $_POST['pattadars'] ? $_POST['pattadars'] : [];
             $tenants = $_POST['tenants'] ? $_POST['tenants'] : [];
 
-            // $survey_no = $_POST['survey_no'];
+            $bhunaksha_survey_no = $_POST['bhunaksha_survey_no'];
         }
 
         $villageCodeArr = explode('-',  $villageCode);
@@ -127,7 +132,7 @@ class PartDagController extends CI_Controller
         $dag_land_revenue = $dag_land_revenue;
         $dag_local_tax = $dag_local_tax;
         $pattadars = $pattadars;
-        // $survey_no = $survey_no;
+        $bhunaksha_survey_no = $bhunaksha_survey_no;
 
 
         $this->dbswitch($dist_code);
@@ -288,7 +293,7 @@ class PartDagController extends CI_Controller
             'o_ganda' => $o_ganda,
             'alpha_dag' => $alpha_dag,
             'dag_area_sqmtr' => $area_sm,
-            // 'survey_no2' => $survey_no
+            'bhunaksha_survey_no' => $bhunaksha_survey_no
         ];
         $insertChithaSplittedStatus = $this->db->insert('chitha_basic_splitted_dags', $insertChithaSplittedArr);
         if (!$insertChithaSplittedStatus || $this->db->affected_rows() < 1) {
@@ -1295,6 +1300,8 @@ class PartDagController extends CI_Controller
                 $msg = $msg . " Missing Part Dag no, ";
             if (!isset($data->land_class_code) || $data->land_class_code == null)
                 $msg = $msg . " Missing Current Land Class";
+            if (!isset($data->bhunaksha_survey_no) || $data->bhunaksha_survey_no == null)
+                $msg = $msg . " Missing Survey Number";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
@@ -1317,7 +1324,7 @@ class PartDagController extends CI_Controller
             $pattadars = $data->pattadars ? $data->pattadars : [];
             $tenants = $data->tenants ? $data->tenants : [];
 
-            // $survey_no = $data->survey_no ? $data->survey_no : null;
+            $bhunaksha_survey_no = $data->bhunaksha_survey_no ? $data->bhunaksha_survey_no : null;
         } else {
             $msg = null;
 
@@ -1330,6 +1337,8 @@ class PartDagController extends CI_Controller
                 $msg = $msg . " Missing Dag No ";
             if (!isset($_POST['part_dag']) || empty($_POST['part_dag']))
                 $msg = $msg . " Missing Part Dag No ";
+            if (!isset($_POST['bhunaksha_survey_no']) || empty($_POST['bhunaksha_survey_no']))
+                $msg = $msg . " Missing Survey Number ";
             if ($msg != null && !empty($msg)) {
                 $response = [
                     'status' => 'n',
@@ -1353,7 +1362,7 @@ class PartDagController extends CI_Controller
             $pattadars = $_POST['pattadars'] ? $_POST['pattadars'] : [];
             $tenants = $_POST['tenants'] ? $_POST['tenants'] : [];
 
-            // $survey_no = $_POST['survey_no'] ? $_POST['survey_no'] : null;
+            $bhunaksha_survey_no = $_POST['bhunaksha_survey_no'] ? $_POST['bhunaksha_survey_no'] : null;
         }
 
         $villageCodeArr = explode('-',  $villageCode);
@@ -1363,7 +1372,7 @@ class PartDagController extends CI_Controller
         $mouza_pargona_code = $villageCodeArr[3];
         $lot_no = $villageCodeArr[4];
         $vill_townprt_code = $villageCodeArr[5];
-        // $survey_no = $survey_no ? $survey_no : null;
+        $bhunaksha_survey_no = $bhunaksha_survey_no ? $bhunaksha_survey_no : null;
 
         $this->dbswitch($dist_code);
 
@@ -1442,7 +1451,7 @@ class PartDagController extends CI_Controller
             'dag_area_lc' => $lessaChatak,
             'dag_area_g' => $ganda,
             'dag_area_are' => $entered_total_dag_area,
-            // 'survey_no2' => $survey_no
+            'bhunaksha_survey_no' => $bhunaksha_survey_no
         ];
         $this->db->where([
             'dist_code' => $dist_code,
