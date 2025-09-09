@@ -106,6 +106,7 @@ class ResurveyDataController extends CI_Controller
         $mouza_pargona_code = $locationArr[3];
         $lot_no = $locationArr[4];
         $vill_townprt_code = $locationArr[5];
+        $lgd_code = $locationArr[6];
         $dag_no = $request_data->dag_no;
 
 
@@ -126,7 +127,7 @@ class ResurveyDataController extends CI_Controller
 
         $api_data = json_decode($api_output);
         $data = $api_data->data;
-        $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
+        $this->output->set_status_header(200); 
 
         //return response
         $response['dhar_dag'] = $data->chitha_dag;

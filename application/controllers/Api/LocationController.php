@@ -660,16 +660,17 @@ class LocationController extends CI_Controller
         $payload = $dags->data;
 
 
-        $url = "https://landhub.assam.gov.in/api/index.php/BhunakshaApiController/getVillageGeoJson";
+        $url = "https://landhub.assam.gov.in/api/index.php/BhunakshaApiController/getDraftVillageGeoJson";
 		$method = 'POST';
 		$data2['location'] = $dist_code.'_'.$subdiv_code.'_'.$cir_code.'_'.$mouza_pargona_code.'_'.$lot_no.'_'.$vill_townprt_code;
 
-		$map_geojon = callApiV2($url, $method, $data2);
+		$map_geojon = callApiV3($url, $method, $data2);
+        $map_geojon_decoded = json_decode($map_geojon);
         $response = [
             'status' => 'y',
             'msg' => 'Successfully retrieved data!',
             'data' => $payload,
-            'map_geojson' => json_decode($map_geojon)
+            'map_geojson' => $map_geojon_decoded->features ? $map_geojon_decoded : ''
         ];
         $this->output->set_status_header(200);
         echo json_encode($response);
