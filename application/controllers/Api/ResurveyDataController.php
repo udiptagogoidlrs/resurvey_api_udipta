@@ -22,21 +22,7 @@ class ResurveyDataController extends CI_Controller
 
         $this->jwt_data = $auth['data'];
     }
-    // public function getResurveyMasterData()
-    // {
-    //     $this->load->helper('cookie');
-    //     $request_data = json_decode(file_get_contents('php://input', true));
-    //     $dist_code = $request_data->dist_code;
 
-    //     header('Content-Type: application/json');
-    //     $data = [];
-    //     $url = LANDHUB_BASE_URL . "api/resurvey/v1/masterdata";
-    //     $method = 'POST';
-    //     $data['dist_code'] = $dist_code;
-    //     $data['apikey'] = LANDHUB_APIKEY;
-    //     $api_output = callApiV2($url, $method, $data);
-    //     echo ($api_output);
-    // }
     public function getResurveyMasterData()
     {
         $this->load->helper('cookie');
@@ -121,6 +107,7 @@ class ResurveyDataController extends CI_Controller
         $data['lot_no'] = $lot_no;
         $data['vill_townprt_code'] = $vill_townprt_code;
         $data['dag_no'] = $dag_no;
+        $data['lgd_code'] = $lgd_code;
 
         $data['apikey'] = LANDHUB_APIKEY;
         $api_output = callApiV2($url, $method, $data);
@@ -234,5 +221,34 @@ class ResurveyDataController extends CI_Controller
             'data' => $response
         ]);
         return;
+    }
+
+    public function getSurveyNoData(){
+        $request_data = json_decode(file_get_contents('php://input', true));
+
+        $locationArr = explode('-', $request_data->loc_code);
+
+        $dist_code = $locationArr[0];
+        $subdiv_code = $locationArr[1];
+        $cir_code = $locationArr[2];
+        $mouza_pargona_code = $locationArr[3];
+        $lot_no = $locationArr[4];
+        $vill_townprt_code = $locationArr[5];
+        $lgd_code = $locationArr[6];
+        $partDag = $request_data->partDag;
+        $bhunaksa_survey_no = $request_data->bhunaksa_survey_no;
+        $this->dbswitch($dist_code);
+
+        $partdag = $this->db->query("SELECT cbsd.*, lcg.name as land_class_name, lcg.name_ass as land_class_name_ass, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
+                LEFT JOIN land_class_groups lcg ON cbsd.land_class_code = lcg.land_class_code
+                LEFT JOIN patta_code pc ON cbsd.patta_type_code = pc.type_code WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND survey_no=? AND bhunaksha_survey_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $partDag, $bhunaksa_survey_no])->row();
+        $data['part_dag'] = $partdag;       
+        echo json_encode([
+            'status' => 'y',
+            'msg' => 'Successfully retrieved data!',
+            'data' => $data
+        ]);
+        return;
+
     }
 }
