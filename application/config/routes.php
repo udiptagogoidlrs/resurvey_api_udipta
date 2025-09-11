@@ -77,6 +77,8 @@ $route['get-survey-no-data'] = 'Api/ResurveyDataController/getSurveyNoData';
 
 //reports
 $route['get-resurvey-report'] = 'Api/ResurveyReportController/getResurveyReportData';
+$route['get-district-report'] = 'Api/ResurveyReportController/getResurveyReportDistData';
+
 
 
 

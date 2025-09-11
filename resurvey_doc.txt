@@ -135,3 +135,17 @@ CREATE TABLE IF NOT EXISTS public.ownership_documents (
 
 ALTER TABLE chitha_basic_splitted_dags
 ADD COLUMN bhunaksha_survey_no VARCHAR(10);
+
+
+ALTER TABLE chitha_basic_splitted_dags
+ADD COLUMN updated_by VARCHAR(10);
+
+ALTER TABLE public.splitted_dags_possessors
+ADD COLUMN updated_by VARCHAR(10);
+
+ALTER TABLE public.ownership_documents
+ADD COLUMN updated_by VARCHAR(10);
+
+ALTER TABLE chitha_basic_splitted_dags
+ADD COLUMN  updated_at TIMESTAMP DEFAULT NOW();
+
