@@ -62,9 +62,7 @@ class ResurveyReportController extends CI_Controller
                         LEFT JOIN location l_village ON cb.dist_code = l_village.dist_code AND cb.subdiv_code = l_village.subdiv_code AND cb.cir_code = l_village.cir_code AND cb.mouza_pargona_code = l_village.mouza_pargona_code AND cb.lot_no = l_village.lot_no AND cb.vill_townprt_code = l_village.vill_townprt_code
                         LEFT JOIN location l_circle ON cb.dist_code = l_circle.dist_code AND cb.subdiv_code = l_circle.subdiv_code AND cb.cir_code = l_circle.cir_code
                         WHERE l_circle.mouza_pargona_code = '00'
-                        AND cb.user_code = ?
-                        ORDER BY cb.date_entry DESC limit 10",
-                        [$usercode]
+                        ORDER BY cb.date_entry DESC limit 10"
                     )->result();
 
                     $dist_data['chitha_basic_splitted_dags'] = $chitha_basic_splitted_dags;
@@ -77,7 +75,88 @@ class ResurveyReportController extends CI_Controller
                 $data[$name] = "Connection failed: " . $e->getMessage();
             }
         }
-
         return $data;
+    }
+
+    public function getResurveyReportDistData()
+    {
+        $this->load->helper('cookie');
+        $request_data = json_decode(file_get_contents('php://input', true));
+        $dist_code   = isset($request_data->dist_code) ? $request_data->dist_code : null;
+        $page        = isset($request_data->page) ? (int)$request_data->page : 1;
+        $pageSize    = isset($request_data->pageSize) ? (int)$request_data->pageSize : 10;
+
+        header('Content-Type: application/json');
+
+        if (!$dist_code) {
+            echo json_encode([
+                'status' => 'n',
+                'msg'    => 'District code is required',
+            ]);
+            return;
+        }
+
+        $this->dbswitch($dist_code);
+        $dist_data = [];
+        $dist_data['dist_name'] = RESURVEY_DISTRICTS[$dist_code] ?? null;
+
+        if ($this->db->table_exists('chitha_basic_splitted_dags')) {
+            // 1️⃣ Total count query
+            $totalCount = $this->db->query("
+            SELECT COUNT(*) as total
+            FROM chitha_basic_splitted_dags cb
+            LEFT JOIN location l_circle 
+                ON cb.dist_code = l_circle.dist_code 
+                AND cb.subdiv_code = l_circle.subdiv_code 
+                AND cb.cir_code = l_circle.cir_code
+            WHERE l_circle.mouza_pargona_code = '00'
+        ")->row()->total;
+
+            // 2️⃣ Pagination calculation
+            $offset = ($page - 1) * $pageSize;
+
+            // 3️⃣ Main query with LIMIT + OFFSET
+            $chitha_basic_splitted_dags = $this->db->query("
+            SELECT 
+                cb.dist_code, cb.subdiv_code, cb.cir_code, cb.mouza_pargona_code, cb.lot_no, cb.vill_townprt_code,
+                cb.dag_no as old_dag_no, cb.survey_no as dag_no, cb.patta_no, cb.patta_type_code,
+                pc.patta_type as patta_type, cb.land_class_code, lcg.name as land_class, 
+                cb.user_code, cb.date_entry,
+                l_village.loc_name as village_name, 
+                l_circle.loc_name as circle_name
+            FROM chitha_basic_splitted_dags cb
+            LEFT JOIN patta_code pc ON cb.patta_type_code = pc.type_code
+            LEFT JOIN land_class_groups lcg ON cb.land_class_code = lcg.land_class_code
+            LEFT JOIN location l_village 
+                ON cb.dist_code = l_village.dist_code 
+                AND cb.subdiv_code = l_village.subdiv_code 
+                AND cb.cir_code = l_village.cir_code 
+                AND cb.mouza_pargona_code = l_village.mouza_pargona_code 
+                AND cb.lot_no = l_village.lot_no 
+                AND cb.vill_townprt_code = l_village.vill_townprt_code
+            LEFT JOIN location l_circle 
+                ON cb.dist_code = l_circle.dist_code 
+                AND cb.subdiv_code = l_circle.subdiv_code 
+                AND cb.cir_code = l_circle.cir_code
+            WHERE l_circle.mouza_pargona_code = '00'
+            ORDER BY cb.date_entry DESC
+            LIMIT {$pageSize} OFFSET {$offset}
+        ")->result();
+
+            $dist_data['chitha_basic_splitted_dags'] = $chitha_basic_splitted_dags;
+            $dist_data['totalCount'] = $totalCount; // 👈 add totalCount for frontend
+        } else {
+            $dist_data['chitha_basic_splitted_dags'] = [];
+            $dist_data['totalCount'] = 0;
+        }
+
+        $this->db->close(); // cleanup connection
+
+        $response = [
+            'status' => 'y',
+            'msg'    => 'Resurvey Report Data fetched successfully',
+            'data'   => $dist_data
+        ];
+        echo json_encode($response);
     }
 }

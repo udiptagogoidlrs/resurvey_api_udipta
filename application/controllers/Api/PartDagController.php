@@ -1451,7 +1451,9 @@ class PartDagController extends CI_Controller
             'dag_area_lc' => $lessaChatak,
             'dag_area_g' => $ganda,
             'dag_area_are' => $entered_total_dag_area,
-            'bhunaksha_survey_no' => $bhunaksha_survey_no
+            'bhunaksha_survey_no' => $bhunaksha_survey_no,
+            'updated_by' => $this->jwt_data->usercode,
+            'updated_at' => date("Y-m-d | h:i:sa"),
         ];
         $this->db->where([
             'dist_code' => $dist_code,
@@ -1461,7 +1463,7 @@ class PartDagController extends CI_Controller
             'lot_no' => $lot_no,
             'vill_townprt_code' => $vill_townprt_code,
             'dag_no' => $original_dag_no,
-            'survey_no' => $part_dag
+            'survey_no' => $part_dag,
         ]);
         $updStatus = $this->db->update('chitha_basic_splitted_dags', $updateArr);
         if (!$updStatus || $this->db->affected_rows() < 1) {
