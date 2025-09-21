@@ -10,6 +10,7 @@ class ResurveyDataController extends CI_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->load->model('Api/ChithaModel');
         $auth = validate_jwt();
         if (!$auth['status']) {
             $this->output
@@ -84,7 +85,9 @@ class ResurveyDataController extends CI_Controller
 
         $request_data = json_decode(file_get_contents('php://input', true));
 
-        $locationArr = explode('-', $request_data->vill_townprt_code);
+        $location = $request_data->vill_townprt_code;
+
+        $locationArr = explode('-', $location);
 
         $dist_code = $locationArr[0];
         $subdiv_code = $locationArr[1];
@@ -183,6 +186,7 @@ class ResurveyDataController extends CI_Controller
                 $row['patta_type'] = $chithaPartDag->patta_type ?? '';
                 $row['patta_no'] = $chithaPartDag->patta_no ?? '';
                 $row['survey_no'] = $chithaPartDag->survey_no2 ?? '';
+                $row['location'] = $location;
 
                 $partDagsForEntry[] = $row;
                 $checkPartDags[] = $part_dag;
@@ -208,6 +212,7 @@ class ResurveyDataController extends CI_Controller
                     $row['patta_type'] = $addedPartDag->patta_type ?? '';
                     $row['patta_no'] = $addedPartDag->patta_no ?? '';
                     $row['survey_no'] = $addedPartDag->survey_no2 ?? '';
+                    $row['location'] = $location;
 
                     $partDagsForEntry[] = $row;
                 }
@@ -250,5 +255,30 @@ class ResurveyDataController extends CI_Controller
         ]);
         return;
 
+    }
+
+    public function getChithaData() {
+        $request_data = json_decode(file_get_contents('php://input', true));
+        $id = $request_data->id;
+        $requestDataArr = explode('-', $id);
+
+        $dist_code = $requestDataArr[0];
+        $subdiv_code = $requestDataArr[1];
+        $cir_code = $requestDataArr[2];
+        $mouza_pargona_code = $requestDataArr[3];
+        $lot_no = $requestDataArr[4];
+        $vill_townprt_code = $requestDataArr[5];
+        $lgd_code = $requestDataArr[6];
+        $dag_no = $requestDataArr[7];
+        $part_dag = $requestDataArr[8];
+        $dag_no_lower = $part_dag;
+        $dag_no_upper = $part_dag;
+
+        $this->dbswitch($dist_code);
+
+        $data = $this->ChithaModel->getchithaDetailsALL($dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no_lower, $dag_no_upper);
+        echo '<pre>';
+        var_dump($data);
+        die;
     }
 }
