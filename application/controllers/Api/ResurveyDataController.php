@@ -185,7 +185,7 @@ class ResurveyDataController extends CI_Controller
                 $row['current_land_class_ass'] = $chithaPartDag->land_class_name_ass ?? '';
                 $row['patta_type'] = $chithaPartDag->patta_type ?? '';
                 $row['patta_no'] = $chithaPartDag->patta_no ?? '';
-                $row['survey_no'] = $chithaPartDag->survey_no2 ?? '';
+                $row['survey_no'] = $chithaPartDag->survey_no ?? '';
                 $row['location'] = $location;
 
                 $partDagsForEntry[] = $row;
@@ -211,7 +211,7 @@ class ResurveyDataController extends CI_Controller
                     $row['current_land_class_ass'] = $addedPartDag->land_class_name_ass ?? '';
                     $row['patta_type'] = $addedPartDag->patta_type ?? '';
                     $row['patta_no'] = $addedPartDag->patta_no ?? '';
-                    $row['survey_no'] = $addedPartDag->survey_no2 ?? '';
+                    $row['survey_no'] = $addedPartDag->survey_no ?? '';
                     $row['location'] = $location;
 
                     $partDagsForEntry[] = $row;
@@ -300,7 +300,7 @@ class ResurveyDataController extends CI_Controller
         $data['location'] = $location;
 
         $this->dbswitch($dist_code);
-        $data['part_dag'] = $this->db->query("SELECT cbsd.dag_no,cbsd.survey_no,cbsd.survey_no2,cbsd.patta_type_code,cbsd.patta_no, cbsd.land_class_code, cbsd.dag_area_b, cbsd.dag_area_k, cbsd.dag_area_lc, cbsd.dag_area_g, cbsd.dag_revenue, cbsd.dag_local_tax,cbsd.dag_area_sqmtr, lcg.name as land_current_use, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
+        $data['part_dag'] = $this->db->query("SELECT cbsd.dag_no,cbsd.survey_no,cbsd.bhunaksha_survey_no,cbsd.patta_type_code,cbsd.patta_no, cbsd.land_class_code, cbsd.dag_area_b, cbsd.dag_area_k, cbsd.dag_area_lc, cbsd.dag_area_g, cbsd.dag_revenue, cbsd.dag_local_tax,cbsd.dag_area_sqmtr, lcg.name as land_current_use, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
                 LEFT JOIN land_class_groups lcg ON cbsd.land_class_code = lcg.land_class_code
                 LEFT JOIN patta_code pc ON cbsd.patta_type_code = pc.type_code 
                 WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND survey_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $part_dag])->row();
