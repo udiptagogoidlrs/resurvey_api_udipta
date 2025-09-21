@@ -57,7 +57,7 @@ class ResurveyDataController extends CI_Controller
 
         $masterData = [];
         if (isset($api_output['data'])) {
-            $masterData = $api_output['data']; 
+            $masterData = $api_output['data'];
         }
         $transfer_types = [];
         foreach (TRANSFER_TYPES as $key => $value) {
@@ -117,7 +117,7 @@ class ResurveyDataController extends CI_Controller
 
         $api_data = json_decode($api_output);
         $data = $api_data->data;
-        $this->output->set_status_header(200); 
+        $this->output->set_status_header(200);
 
         //return response
         $response['dhar_dag'] = $data->chitha_dag;
@@ -228,7 +228,8 @@ class ResurveyDataController extends CI_Controller
         return;
     }
 
-    public function getSurveyNoData(){
+    public function getSurveyNoData()
+    {
         $request_data = json_decode(file_get_contents('php://input', true));
 
         $locationArr = explode('-', $request_data->loc_code);
@@ -247,17 +248,17 @@ class ResurveyDataController extends CI_Controller
         $partdag = $this->db->query("SELECT cbsd.*, lcg.name as land_class_name, lcg.name_ass as land_class_name_ass, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
                 LEFT JOIN land_class_groups lcg ON cbsd.land_class_code = lcg.land_class_code
                 LEFT JOIN patta_code pc ON cbsd.patta_type_code = pc.type_code WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND survey_no=? AND bhunaksha_survey_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $partDag, $bhunaksa_survey_no])->row();
-        $data['part_dag'] = $partdag;       
+        $data['part_dag'] = $partdag;
         echo json_encode([
             'status' => 'y',
             'msg' => 'Successfully retrieved data!',
             'data' => $data
         ]);
         return;
-
     }
 
-    public function getChithaData() {
+    public function getChithaData()
+    {
         $request_data = json_decode(file_get_contents('php://input', true));
         $id = $request_data->id;
         $requestDataArr = explode('-', $id);
@@ -271,14 +272,81 @@ class ResurveyDataController extends CI_Controller
         $lgd_code = $requestDataArr[6];
         $dag_no = $requestDataArr[7];
         $part_dag = $requestDataArr[8];
-        $dag_no_lower = $part_dag;
-        $dag_no_upper = $part_dag;
+
+
+        $url = LANDHUB_BASE_URL . "api/resurvey/v1/get-location";
+        $method = 'POST';
+        $params = [
+            "dist_code" => $dist_code,
+            "subdiv_code" => $subdiv_code,
+            "cir_code" => $cir_code,
+            "mouza_pargona_code" => $mouza_pargona_code,
+            "lot_no" => $lot_no,
+            "vill_townprt_code" => $vill_townprt_code,
+            "apikey"    => LANDHUB_APIKEY
+        ];
+
+
+        $api_output = callApiV2($url, $method, $params);
+
+        if (is_string($api_output)) {
+            $api_output = json_decode($api_output, true);
+        }
+
+        $location = [];
+        if (isset($api_output['data'])) {
+            $location = $api_output['data'];
+        }
+        $data['location'] = $location;
 
         $this->dbswitch($dist_code);
+        $data['part_dag'] = $this->db->query("SELECT cbsd.dag_no,cbsd.survey_no,cbsd.survey_no2,cbsd.patta_type_code,cbsd.patta_no, cbsd.land_class_code, cbsd.dag_area_b, cbsd.dag_area_k, cbsd.dag_area_lc, cbsd.dag_area_g, cbsd.dag_revenue, cbsd.dag_local_tax,cbsd.dag_area_sqmtr, lcg.name as land_current_use, pc.patta_type FROM chitha_basic_splitted_dags cbsd 
+                LEFT JOIN land_class_groups lcg ON cbsd.land_class_code = lcg.land_class_code
+                LEFT JOIN patta_code pc ON cbsd.patta_type_code = pc.type_code 
+                WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=? AND survey_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $part_dag])->row();
+        $data['dag'] = $this->db->query("SELECT cb.*, lc.land_type as land_class_old,pc.patta_type as patta_type_old FROM chitha_basic cb 
+        LEFT JOIN landclass_code lc ON cb.land_class_code = lc.class_code
+        LEFT JOIN patta_code pc ON cb.patta_type_code = pc.type_code
+        WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no])->row();
 
-        $data = $this->ChithaModel->getchithaDetailsALL($dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no_lower, $dag_no_upper);
-        echo '<pre>';
-        var_dump($data);
-        die;
+        $data['pattadars'] = $this->db->query("SELECT cdp.*, cp.pdar_name, cp.pdar_father, cp.pdar_add1, cp.pdar_add2, cp.pdar_add3 FROM chitha_dag_pattadar cdp, chitha_pattadar cp WHERE cdp.dist_code=cp.dist_code AND cdp.subdiv_code=cp.subdiv_code AND cdp.cir_code=cp.cir_code AND cdp.mouza_pargona_code=cp.mouza_pargona_code AND cdp.lot_no=cp.lot_no AND cdp.vill_townprt_code=cp.vill_townprt_code AND cdp.patta_no=cp.patta_no AND cdp.patta_type_code=cp.patta_type_code AND cdp.pdar_id=cp.pdar_id AND cdp.dist_code=? AND cdp.subdiv_code=? AND cdp.cir_code=? AND cdp.mouza_pargona_code=? AND cdp.lot_no=? AND cdp.vill_townprt_code=? AND cdp.patta_no=? AND cdp.patta_type_code=? AND cdp.dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $data['part_dag']->patta_no, $data['part_dag']->patta_type_code, $part_dag])->result();
+
+        $possessors = $this->db->query("SELECT * FROM splitted_dags_possessors WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND old_dag_no=? AND part_dag=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no, $part_dag])->result();
+        if (!empty($possessors)) {
+            foreach ($possessors as $possessor) {
+            $guard_relation = $possessor->guard_relation;
+            $pattadar_relation = $possessor->pattadar_relation;
+            $mode_of_acquisition = $possessor->mode_of_acquisition;
+
+            $guard_relation_data = $this->db->query("SELECT guard_rel_desc_as, guard_rel_desc FROM master_guard_rel WHERE guard_rel=?", [$guard_relation])->row();
+            $pdar_relation_data = $this->db->query("SELECT guard_rel_desc_as, guard_rel_desc FROM master_guard_rel WHERE guard_rel=?", [$pattadar_relation])->row();
+
+            $guard_relation_name = (!empty($guard_relation_data)) ? $guard_relation_data->guard_rel_desc_as . ' (' . $guard_relation_data->guard_rel_desc . ')' : '';
+            $pattadar_relation_name = (!empty($pdar_relation_data)) ? $pdar_relation_data->guard_rel_desc_as . ' (' . $pdar_relation_data->guard_rel_desc . ')' : '';
+
+            $mode_of_acquisition_name = '';
+            foreach(TRANSFER_TYPES as $key => $t_type) {
+                if($key == $mode_of_acquisition) {
+                $mode_of_acquisition_name = $t_type;
+                break;
+                }
+            }
+
+            $possessor->guard_relation_name = $guard_relation_name;
+            $possessor->pattadar_relation_name = $pattadar_relation_name;
+            $possessor->mode_of_acquisition_name = $mode_of_acquisition_name;
+            $possessor->ownership_documents = $this->db->query("select * from ownership_documents where possessor_u_id= ? ",[$possessor->possessor_u_id])->result();
+            }
+        }
+        $data['possessors'] = $possessors;
+        $data['tenants'] = $this->db->query("SELECT * FROM chitha_tenant WHERE dist_code=? AND subdiv_code=? AND cir_code=? AND mouza_pargona_code=? AND lot_no=? AND vill_townprt_code=? AND dag_no=?", [$dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $part_dag])->result();
+
+        // $data = $this->ChithaModel->getchithaDetailsALL($dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $dag_no_lower, $dag_no_upper);
+        echo json_encode([
+            'status' => 'y',
+            'msg' => 'Successfully retrieved data!',
+            'data' => $data
+        ]);
+        return;
     }
 }
