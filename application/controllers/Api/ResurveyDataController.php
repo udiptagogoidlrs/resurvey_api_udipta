@@ -219,6 +219,31 @@ class ResurveyDataController extends CI_Controller
             }
         }
         $response['part_dags'] = $partDagsForEntry;
+        if(empty($lgd_code)) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Missing Location lgd!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            exit;
+        }
+
+        $requestData = [
+            "lgdCode"=> $lgd_code,
+            "dagNo" => $dag_no
+        ];
+
+        $ngdrsResp = callNgdrsApi("v1/search_deed.php", "POST", json_encode($requestData));
+
+        if($ngdrsResp["http_status"] == 200 && isset($ngdrsResp["data"]) && $ngdrsResp["data"]->success == true && isset($ngdrsResp["data"]->data) && !empty($ngdrsResp["data"]->data) && isset($ngdrsResp["data"]->data->data) && !isset($ngdrsResp["data"]->data->data->message)) {
+            $ngdrsData = $ngdrsResp["data"]->data->data;
+        }
+        else {
+            $ngdrsData = [];
+        }
+
+        $response['ngdrs_docs'] = $ngdrsData;
 
         echo json_encode([
             'status' => 'y',
