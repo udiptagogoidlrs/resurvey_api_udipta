@@ -127,4 +127,219 @@ class LoginController extends CI_Controller
         return;
     }
 
+
+
+
+    public function addLoginLog()
+    {
+        if ($this->input->get('api_key') == "resurvey_application" || $_POST['api_key'] == "resurvey_application") {
+            try {
+                $form_data = [
+                    'dist_code' => $this->input->get('dist_code') ? $this->input->get('dist_code') : $_POST['dist_code'],
+                    'username' => $this->input->get('username') ? $this->input->get('username') : $_POST['username'],
+                    'id' => time(),
+                    'expired' => 0
+                ];
+                // $form_data['id'] = time();
+                $encrypt = openssl_encrypt($form_data['id'], "AES-128-CTR", "singleENCRYPT", 0, '1234567893032221');
+                // $form_data['expired'] = 0;
+                $db = $this->UserModel->connectLocmaster();
+                $db->trans_start();
+                $db->insert('login_log', [
+                    'dist_code' => $form_data['dist_code'],
+                    'expired' => $form_data['expired'],
+                    'id' => $form_data['id'],
+                    'username' => $form_data['username'],
+                ]);
+                $db->trans_complete();
+                Header('Access-Control-Allow-Origin: *');
+                echo json_encode(['message' => 'Successfully Added', 'responseCode' => 1, 'id' => $encrypt]);
+            } catch (Exception $e) {
+                Header('Access-Control-Allow-Origin: *');
+                echo json_encode(['message' => 'Error while inserting.', 'responseCode' => 0]);
+            }
+        }
+    }
+
+    public function singleSignRedirect()
+    {
+        $queryString = $_POST['resurvey_data'];
+        parse_str($queryString, $output);
+        $resurvey_data = $output;
+
+        $district = $this->input->post('district', true);
+        $id = $this->input->post('id', true);
+        $is_lm = $resurvey_data['is_lm'];
+        $user_desig_code = $resurvey_data['user_desig_code'];
+        $login_user = $resurvey_data['login_user'];
+        $user = $resurvey_data['user'];
+        $password_change_flag = $login_user['password_change_flag'];
+        $rnd_id = openssl_decrypt($id, "AES-128-CTR", "singleENCRYPT", 0, '1234567893032221');
+        if($is_lm == 'y') {
+            $lm_code = $resurvey_data['lm_code'];
+        }
+        $db = $this->UserModel->connectLocmaster();
+
+        $query = $db->get_where('login_log', array('id' => $rnd_id, 'expired' => 0))->row();
+        if(empty($query)) {
+            $this->output->set_status_header(401);
+            echo json_encode([
+                'status' => 'n',
+                'msg' => 'The page you requested was not found!'
+            ]);
+            return;
+        }
+        $db->set([
+            'expired' => 1,
+        ]);
+        $db->where('id', $rnd_id);
+        $db->update('login_log');
+
+        $logindetails = false;
+
+        $dist = $login_user['dist_code'];
+
+        $this->dbswitch($dist);
+        $validateuserdetails = $this->LoginModel->ValidateSingleSignUser($login_user);
+
+        if($validateuserdetails) {
+            if ($is_lm == 'y') {
+                $this->db->select('*');
+                $this->db->from('lm_code');
+                $this->db->where('dist_code', $lm_code['dist_code'])->where('subdiv_code', $lm_code['subdiv_code'])
+                    ->where('cir_code', $lm_code['cir_code'])->where('mouza_pargona_code', $lm_code['mouza_pargona_code'])->where('lot_no', $lm_code['lot_no'])
+                    ->where('lm_name', $lm_code['lm_name'])
+                    ->where('lm_code', $lm_code['lm_code']);
+                $query = $this->db->get();
+                $lm_user_with_name_exists = $query->row();
+                if (!$lm_user_with_name_exists) {
+                    $this->db->where('dist_code', $lm_code['dist_code'])->where('subdiv_code', $lm_code['subdiv_code'])
+                        ->where('cir_code', $lm_code['cir_code'])->where('mouza_pargona_code', $lm_code['mouza_pargona_code'])->where('lot_no', $lm_code['lot_no'])
+                        ->where('lm_code', $lm_code['lm_code']);
+                    $this->db->update('lm_code', $lm_code);
+                }
+            }
+            $logindetails = true;
+        }
+        else {
+            $this->db->trans_begin();
+            $this->db->insert('loginuser_table', $login_user);
+
+            if ($is_lm == 'y') {
+                $this->db->select('*');
+                $this->db->from('lm_code');
+
+                $this->db->where('dist_code', $lm_code['dist_code'])->where('subdiv_code', $lm_code['subdiv_code'])
+                    ->where('cir_code', $lm_code['cir_code'])->where('mouza_pargona_code', $lm_code['mouza_pargona_code'])->where('lot_no', $lm_code['lot_no'])->where('lm_code', $lm_code['lm_code']);
+                $query = $this->db->get();
+                $lm_user_exists = $query->row();
+
+                if ($lm_user_exists) {
+                    $this->db->select('*');
+                    $this->db->from('lm_code');
+
+                    $this->db->where('dist_code', $lm_code['dist_code'])->where('subdiv_code', $lm_code['subdiv_code'])
+                        ->where('cir_code', $lm_code['cir_code'])->where('mouza_pargona_code', $lm_code['mouza_pargona_code'])->where('lot_no', $lm_code['lot_no'])
+                        ->where('lm_name', $lm_code['lm_name'])
+                        ->where('lm_code', $lm_code['lm_code']);
+                    $query = $this->db->get();
+                    $lm_user_with_name_exists = $query->row();
+                    if (!$lm_user_with_name_exists) {
+                        $this->db->where('dist_code', $lm_code['dist_code'])->where('subdiv_code', $lm_code['subdiv_code'])
+                            ->where('cir_code', $lm_code['cir_code'])->where('mouza_pargona_code', $lm_code['mouza_pargona_code'])->where('lot_no', $lm_code['lot_no'])
+                            ->where('lm_code', $lm_code['lm_code']);
+                        $this->db->update('lm_code', $lm_code);
+                    }
+                } else {
+                    $this->db->insert('lm_code', $lm_code);
+                }
+            } else {
+                $this->db->select('*');
+                $this->db->from('users');
+
+                $this->db->where('dist_code', $user['dist_code'])->where('subdiv_code', $user['subdiv_code'])
+                    ->where('cir_code', $user['cir_code'])->where('user_code', $user['user_code']);
+                $query = $this->db->get();
+                $user_exists = $query->row();
+
+                if ($user_exists) {
+                } else {
+                    $this->db->insert('users', $user);
+                }
+            }
+
+            $this->db->trans_complete();
+            $logindetails = true;
+        }
+
+        if ($is_lm == 'y') {
+            $user_desig_code = 'LM';
+        } else {
+            $user_desig_code = $user_desig_code;
+        }
+        // $this->session->set_userdata('fromSingleSign', true);
+        $usertype = $this->UserModel->getRoleCodeFromDharCode($user_desig_code);
+        if (!$usertype) {
+            $this->output->set_status_header(401);
+            echo json_encode([
+                'status' => 'n',
+                'msg' => 'Not Authorized for this UserType!'
+            ]);
+            return;
+        }
+
+        if (!$logindetails) {
+            $this->output->set_status_header(401);
+            echo json_encode([
+                'status' => 'n',
+                'msg' => 'User Not Validated!'
+            ]);
+            return;
+        }
+
+        $dist_code = $login_user['dist_code'];
+        $subdiv_code = $login_user['subdiv_code'];
+        $cir_code = $login_user['cir_code'];
+        $mouza_pargona_code = $login_user['mouza_pargona_code'];
+        $lot_no = $login_user['lot_no'];
+        $user_code = $login_user['user_code'];
+
+        $payload = [
+            'usertype' => $usertype,
+            'loggedin' => true,
+            'usercode' => $user_code,
+            'dcode' => $dist_code,
+            'subdiv_code' => $subdiv_code,
+            'cir_code' => $cir_code,
+            'user_desig_code' => $user_desig_code,
+            'is_password_changed' => ($password_change_flag == 1) ? '1' : null
+        ];
+
+        $userDetails = [
+            'username' => $login_user['use_name'],
+            'dist_code' => $login_user['dist_code'],
+            'subdiv_code' => (isset($login_user['subdiv_code'])) ? $login_user['subdiv_code'] : '00',
+            'cir_code' => (isset($login_user['cir_code'])) ? $login_user['cir_code'] : '00',
+            'mouza_pargona_code' => (isset($login_user['mouza_pargona_code'])) ? $login_user['mouza_pargona_code'] : '00',
+            'lot_no' => (isset($login_user['lot_no'])) ? $login_user['lot_no'] : '00',
+            'user_role' => isset($usertype) ? $usertype : '',
+            'action' => $this->UserModel::$USER_ACTIVITY_LOGIN
+        ];
+        $CI = &get_instance();
+        $this->db = $CI->load->database('default', TRUE);
+        $insertStatus = $this->LoginModel->UserActivity($userDetails, 'Login from ' . SINGLESIGN_LINK);
+
+        $token = jwtencode($payload);
+
+        $response = [
+            'status' => 'y',
+            'msg' => 'Successfully logged in!',
+            'data' => $token,
+            'usertype' => $usertype
+        ];
+        $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
+        echo json_encode($response);
+        return;
+
+    }
 }

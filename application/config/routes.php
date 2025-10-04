@@ -80,6 +80,10 @@ $route['get_chitha_data'] = 'Api/ResurveyDataController/getChithaData';
 $route['get-resurvey-report'] = 'Api/ResurveyReportController/getResurveyReportData';
 $route['get-district-report'] = 'Api/ResurveyReportController/getResurveyReportDistData';
 
+//singlesignlogin routes
+$route['add_login_log'] = 'Api/LoginController/addLoginLog';
+$route['singlesign_login'] = 'Api/LoginController/singleSignRedirect';
+
 
 
 
