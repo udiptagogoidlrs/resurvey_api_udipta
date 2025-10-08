@@ -79,6 +79,10 @@ $route['get_chitha_data'] = 'Api/ResurveyDataController/getChithaData';
 //reports
 $route['get-resurvey-report'] = 'Api/ResurveyReportController/getResurveyReportData';
 $route['get-district-report'] = 'Api/ResurveyReportController/getResurveyReportDistData';
+//co routes
+$route['get-circle-resurvey-report'] = 'Api/ResurveyReportController/getResurveyReportCoData';
+$route['get-circle-resurvey-dashboard'] = 'Api/ResurveyReportController/getResurveyCoDashData';
+
 
 //singlesignlogin routes
 $route['add_login_log'] = 'Api/LoginController/addLoginLog';
