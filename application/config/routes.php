@@ -69,6 +69,10 @@ $route['submit_possessor'] = 'Api/PartDagController/submitPossessor';
 $route['delete_possessor'] = 'Api/PartDagController/deletePossessor';
 $route['update_part_dag'] = 'Api/PartDagController/updatePartDag';
 $route['delete_part_dag'] = 'Api/PartDagController/deletePartDag';
+$route['update_possessor_photo'] = 'Api/PartDagController/updatePossessorPhoto';
+$route['remove_possessor_photo'] = 'Api/PartDagController/removePossessorPhoto';
+$route['delete_possessor_ownership_document'] = 'Api/PartDagController/deletePossessorOwnershipDocument';
+$route['update_possessor'] = 'Api/PartDagController/updatePossessor';
 
 $route['get-master-data'] = 'Api/ResurveyDataController/getResurveyMasterData';
 $route['get-dag-data'] = 'Api/ResurveyDataController/getResurveyDagData';
@@ -82,6 +86,9 @@ $route['get-district-report'] = 'Api/ResurveyReportController/getResurveyReportD
 //co routes
 $route['get-circle-resurvey-report'] = 'Api/ResurveyReportController/getResurveyReportCoData';
 $route['get-circle-resurvey-dashboard'] = 'Api/ResurveyReportController/getResurveyCoDashData';
+
+//lm routes
+$route['get-lm-resurvey-dashboard'] = 'Api/ResurveyReportController/getResurveyLmDashData';
 
 
 //singlesignlogin routes
