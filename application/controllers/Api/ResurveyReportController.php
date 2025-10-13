@@ -330,4 +330,94 @@ class ResurveyReportController extends CI_Controller
         ];
         echo json_encode($response);
     }
+
+    public function getResurveyLmDashData(){
+        $dist_code   = $this->jwt_data->dcode;
+        $subdiv_code = $this->jwt_data->subdiv_code;
+        $cir_code    = $this->jwt_data->cir_code;
+        $mouza_pargona_code = $this->jwt_data->mouza_pargona_code;
+        $lot_no = $this->jwt_data->lot_no;
+
+        header('Content-Type: application/json');
+
+        if (!$dist_code || !$subdiv_code || !$cir_code || !$mouza_pargona_code || !$lot_no) {
+            echo json_encode([
+                'status' => 'n',
+                'msg'    => 'Location codes are required',
+            ]);
+            return;
+        }
+
+        $this->dbswitch($dist_code);
+        $data = [];
+
+        $location = $this->db->query("
+            SELECT 
+            l.loc_name as circle_name, 
+            l_dist.loc_name as dist_name, 
+            l_subdiv.loc_name as subdiv_name,
+            l_mouza.loc_name as mouza_name,
+            l_lot.loc_name as lot_name
+            FROM location l
+            JOIN location l_dist 
+            ON l.dist_code = l_dist.dist_code 
+            AND l_dist.subdiv_code = '00'
+            JOIN location l_subdiv 
+            ON l.dist_code = l_subdiv.dist_code 
+            AND l.subdiv_code = l_subdiv.subdiv_code 
+            AND l_subdiv.cir_code = '00'
+            JOIN location l_mouza
+            ON l.dist_code = l_mouza.dist_code
+            AND l.subdiv_code = l_mouza.subdiv_code
+            AND l.cir_code = l_mouza.cir_code
+            AND l.mouza_pargona_code = l_mouza.mouza_pargona_code
+            AND l_mouza.lot_no = '00'
+            JOIN location l_lot
+            ON l.dist_code = l_lot.dist_code
+            AND l.subdiv_code = l_lot.subdiv_code
+            AND l.cir_code = l_lot.cir_code
+            AND l.mouza_pargona_code = l_lot.mouza_pargona_code
+            AND l.lot_no = l_lot.lot_no
+            WHERE l.dist_code = '{$dist_code}' 
+            AND l.subdiv_code = '{$subdiv_code}' 
+            AND l.cir_code = '{$cir_code}' 
+            AND l.mouza_pargona_code = '{$mouza_pargona_code}'
+            AND l.lot_no = '{$lot_no}'
+        ")->row();
+
+        $data['circle_name'] = $location ? $location->circle_name : null;
+        $data['dist_name'] = $location ? $location->dist_name : null;
+        $data['subdiv_name'] = $location ? $location->subdiv_name : null;
+        $data['mouza_name'] = $location ? $location->mouza_name : null;
+        $data['lot_name'] = $location ? $location->lot_name : null;
+
+        if ($this->db->table_exists('chitha_basic_splitted_dags')) {
+            // Total count query up to lot_no
+            $totalCount = $this->db->query("
+            SELECT COUNT(*) as total
+            FROM chitha_basic_splitted_dags cb
+            LEFT JOIN location l_circle 
+                ON cb.dist_code = l_circle.dist_code 
+                AND cb.subdiv_code = l_circle.subdiv_code 
+                AND cb.cir_code = l_circle.cir_code
+            WHERE l_circle.mouza_pargona_code = '00'
+            AND cb.subdiv_code = '{$subdiv_code}'
+            AND cb.cir_code = '{$cir_code}'
+            AND cb.mouza_pargona_code = '{$mouza_pargona_code}'
+            AND cb.lot_no = '{$lot_no}'
+            ")->row()->total;
+            $data['totalCount'] = $totalCount; 
+        } else {
+            $data['totalCount'] = 0;
+        }
+
+        $this->db->close(); // cleanup connection
+
+        $response = [
+            'status' => 'y',
+            'msg'    => 'Resurvey Report Data fetched successfully',
+            'data'   => $data
+        ];
+        echo json_encode($response);
+    }
 }

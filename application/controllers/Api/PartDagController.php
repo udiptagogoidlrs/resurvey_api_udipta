@@ -1188,6 +1188,481 @@ class PartDagController extends CI_Controller
         return;
     }
 
+    public function updatePossessorPhoto()
+    {
+        header('Content-Type: application/json');
+
+        $msg = null;
+
+        if (!isset($_POST['possessor_u_id']) || empty($_POST['possessor_u_id']))
+            $msg = $msg . " Missing Possessor ID,";
+        if (!isset($_POST['dist_code']) || empty($_POST['dist_code']))
+            $msg = $msg . " Missing District Code,";
+        if (!isset($_POST['possessor_photo']) || empty($_POST['possessor_photo']))
+            $msg = $msg . " Missing Possessor Photo, ";
+        if ($msg != null && !empty($msg)) {
+            $response = [
+                'status' => 'n',
+                'msg' => $msg
+            ];
+            $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+        $possessor_u_id = $_POST['possessor_u_id'];
+        $possessor_photo = $_POST['possessor_photo'];
+        $dist_code = $_POST['dist_code'];
+
+        $this->dbswitch($dist_code);
+        $possessor = $this->db->query("select * from splitted_dags_possessors where possessor_u_id=?", [$possessor_u_id])->row();
+        if (!$possessor) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Invalid Possessor ID!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        $subdiv_code = $possessor->subdiv_code;
+        $cir_code = $possessor->cir_code;
+        $mouza_pargona_code = $possessor->mouza_pargona_code;
+        $lot_no = $possessor->lot_no;
+        $vill_townprt_code = $possessor->vill_townprt_code;
+        $possessor_id = $possessor->possessor_id;
+        $old_photo_path = $possessor->photo_path;
+
+        if ($old_photo_path != null && file_exists($old_photo_path)) {
+            unlink($old_photo_path);
+        }
+
+
+        $photo_path = '';
+        if ($possessor_photo != null && isset($possessor_photo) && $possessor_photo !== '') {
+            $photo_data = base64_decode($possessor_photo);
+            $photo_name = 'possessor_' . $dist_code . $subdiv_code . $cir_code . $mouza_pargona_code . $lot_no . $vill_townprt_code . '_' . $possessor_id . '_' . time() . '.jpg';
+            $photo_path = 'uploads/possessors/' . $photo_name;
+            if (!file_put_contents($photo_path, $photo_data)) {
+                log_message('error', 'Could not save possessor photo!');
+                $response = [
+                    'status' => 'n',
+                    'msg' => 'Could not save possessor photo!'
+                ];
+                $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+                echo json_encode($response);
+                return;
+            }
+        }
+
+        $updateArr = [
+            'photo_path' => $photo_path,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $this->db->where('possessor_u_id', $possessor_u_id);
+        $updateStatus = $this->db->update('splitted_dags_possessors', $updateArr);
+        if (!$updateStatus || $this->db->affected_rows() < 1) {
+            log_message('error', 'Could not update possessor photo!');
+            $response = [
+                'status' => 'n',
+                'msg' => 'Could not update possessor photo!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+        $response = [
+            'status' => 'y',
+            'msg' => 'Successfully updated possessor photo!',
+            'possessor' => $this->getPossessorById($possessor_u_id)
+        ];
+        $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
+        echo json_encode($response);
+    }
+
+    public function removePossessorPhoto()
+    {
+        header('Content-Type: application/json');
+
+        $msg = null;
+
+        if (!isset($_POST['possessor_u_id']) || empty($_POST['possessor_u_id']))
+            $msg = $msg . " Missing Possessor ID,";
+        if (!isset($_POST['dist_code']) || empty($_POST['dist_code']))
+            $msg = $msg . " Missing District Code,";
+        if ($msg != null && !empty($msg)) {
+            $response = [
+                'status' => 'n',
+                'msg' => $msg
+            ];
+            $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+        $possessor_u_id = $_POST['possessor_u_id'];
+        $dist_code = $_POST['dist_code'];
+
+        $this->dbswitch($dist_code);
+        $possessor = $this->db->query("select * from splitted_dags_possessors where possessor_u_id=?", [$possessor_u_id])->row();
+        if (!$possessor) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Invalid Possessor ID!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+
+        $old_photo_path = $possessor->photo_path;
+
+        if ($old_photo_path != null && file_exists($old_photo_path)) {
+            unlink($old_photo_path);
+        }
+        $updateArr = [
+            'photo_path' => null,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        $this->db->where('possessor_u_id', $possessor_u_id);
+        $updateStatus = $this->db->update('splitted_dags_possessors', $updateArr);
+        if (!$updateStatus || $this->db->affected_rows() < 1) {
+            log_message('error', 'Could not remove possessor photo!');
+            $response = [
+                'status' => 'n',
+                'msg' => 'Could not remove possessor photo!'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+        $response = [
+            'status' => 'y',
+            'msg' => 'Successfully removed possessor photo!',
+            'possessor' => $this->getPossessorById($possessor_u_id)
+        ];
+        $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
+        echo json_encode($response);
+    }
+
+    private function getPossessorById($possessor_u_id)
+    {
+        $possessor = $this->db->query("SELECT * FROM splitted_dags_possessors WHERE possessor_u_id = ?", [$possessor_u_id])->row();
+
+        if (!$possessor) {
+            return false;
+        }
+
+        $guard_relation = $possessor->guard_relation;
+        $pattadar_relation = $possessor->pattadar_relation;
+        $mode_of_acquisition = $possessor->mode_of_acquisition;
+
+        $guard_relation_data = $this->db->query("SELECT guard_rel_desc_as, guard_rel_desc FROM master_guard_rel WHERE guard_rel=?", [$guard_relation])->row();
+        $pdar_relation_data = $this->db->query("SELECT guard_rel_desc_as, guard_rel_desc FROM master_guard_rel WHERE guard_rel=?", [$pattadar_relation])->row();
+
+        $guard_relation_name = (!empty($guard_relation_data)) ? $guard_relation_data->guard_rel_desc_as . ' (' . $guard_relation_data->guard_rel_desc . ')' : '';
+        $pattadar_relation_name = (!empty($pdar_relation_data)) ? $pdar_relation_data->guard_rel_desc_as . ' (' . $pdar_relation_data->guard_rel_desc . ')' : '';
+
+        $mode_of_acquisition_name = '';
+        if (defined('TRANSFER_TYPES') && is_array(TRANSFER_TYPES)) {
+            foreach (TRANSFER_TYPES as $key => $t_type) {
+                if ($key == $mode_of_acquisition) {
+                    $mode_of_acquisition_name = $t_type;
+                    break;
+                }
+            }
+        }
+
+        $possessor->guard_relation_name = $guard_relation_name;
+        $possessor->pattadar_relation_name = $pattadar_relation_name;
+        $possessor->mode_of_acquisition_name = $mode_of_acquisition_name;
+        $possessor->ownership_documents = $this->db->query("SELECT * FROM ownership_documents WHERE possessor_u_id = ?", [$possessor->possessor_u_id])->result();
+
+        return $possessor;
+    }
+
+    public function deletePossessorOwnershipDocument()
+    {
+        $this->load->helper('cookie');
+        header('Content-Type: application/json');
+        if (!isset($_POST['document_id']) || empty($_POST['document_id'])) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Missing Document ID'
+            ];
+            $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+        if (!isset($_POST['possessor_u_id']) || empty($_POST['possessor_u_id'])) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Missing Possessor ID'
+            ];
+            $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+        if (!isset($_POST['dist_code']) || empty($_POST['dist_code'])) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Missing District Code'
+            ];
+            $this->output->set_status_header(401);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+        $dist_code = $_POST['dist_code'];
+        $this->dbswitch($dist_code);
+        $document_id = $_POST['document_id'];
+        $possessor_u_id = $_POST['possessor_u_id'];
+        $document = $this->db->query("SELECT * FROM ownership_documents WHERE id = ? AND possessor_u_id = ?", [$document_id, $possessor_u_id])->row();
+        if (!$document) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Invalid Document ID'
+            ];
+            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+        $file_path = $document->file_path;
+        if ($file_path != null && file_exists($file_path)) {
+            unlink($file_path);
+            $this->db->delete('ownership_documents', ['id' => $document_id, 'possessor_u_id' => $possessor_u_id]);
+            $response = [
+                'status' => 'y',
+                'msg' => 'Successfully deleted document!',
+                'possessor' => $this->getPossessorById($possessor_u_id)
+            ];
+            $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        } else {
+            $this->db->delete('ownership_documents', ['id' => $document_id, 'possessor_u_id' => $possessor_u_id]);
+            $response = [
+                'status' => 'y',
+                'msg' => 'Successfully deleted document!',
+                'possessor' => $this->getPossessorById($possessor_u_id)
+
+            ];
+            $this->output->set_status_header(200);  // Change to 400, 401, 500, etc. as needed
+            echo json_encode($response);
+            return;
+        }
+    }
+
+    public function updatePossessor()
+    {
+        header('Content-Type: application/json');
+        if ($_SERVER['CONTENT_TYPE'] == 'application/json') {
+            $data = json_decode(file_get_contents('php://input', true));
+            $msg = null;
+
+            if (!isset($data) || $data == null)
+                $msg = $msg . " Missing Parameters,";
+
+            if (!isset($data->possessor_u_id) || $data->possessor_u_id == null)
+                $msg = $msg . " Missing Possessor ID,";
+            if (!isset($data->dist_code) || $data->dist_code == null)
+                $msg = $msg . " Missing District Code,";
+            if (!isset($data->possessor_name) || $data->possessor_name == null)
+                $msg = $msg . " Missing Possessor Name, ";
+            if (!isset($data->possessor_guardian_name) || $data->possessor_guardian_name == null)
+                $msg = $msg . " Missing Possessor Guardian Name, ";
+            if (!isset($data->possessor_guardian_relation) || $data->possessor_guardian_relation == null)
+                $msg = $msg . " Missing Possessor Guardian Relation ";
+            if ($msg != null && !empty($msg)) {
+                $response = [
+                    'status' => 'n',
+                    'msg' => $msg
+                ];
+                $this->output->set_status_header(401);
+                echo json_encode($response);
+                exit;
+            }
+            $possessor_u_id = $data->possessor_u_id;
+            $dist_code = $data->dist_code;
+            $possessor_name = $data->possessor_name;
+            $possessor_guardian_name = $data->possessor_guardian_name;
+            $possessor_guardian_relation = $data->possessor_guardian_relation;
+            $possessor_mobile_no = isset($data->possessor_mobile_no) ? $data->possessor_mobile_no : null;
+            $possessor_mode_of_acquisition = isset($data->possessor_mode_of_acquisition) ? $data->possessor_mode_of_acquisition : null;
+            $possessor_name_mut = isset($data->possessor_name_mut) ? $data->possessor_name_mut : null;
+            $possessor_father_name_mut = isset($data->possessor_father_name_mut) ? $data->possessor_father_name_mut : null;
+            $possessor_address_mut = isset($data->possessor_address_mut) ? $data->possessor_address_mut : null;
+            $possessor_remark = isset($data->possessor_remark) ? $data->possessor_remark : null;
+            $possessor_id = isset($data->possessor_id) ? $data->possessor_id : null;
+            $possessor_gender = isset($data->possessor_gender) ? $data->possessor_gender : null;
+            $possessor_dob = isset($data->possessor_dob) ? $data->possessor_dob : null;
+            $possessor_aadhaar = isset($data->possessor_aadhaar) ? $data->possessor_aadhaar : null;
+            $possessor_email = isset($data->possessor_email) ? $data->possessor_email : null;
+        } else {
+            $msg = null;
+            if (!isset($_POST['possessor_u_id']) || empty($_POST['possessor_u_id']))
+                $msg = $msg . " Missing Possessor ID,";
+            if (!isset($_POST['dist_code']) || empty($_POST['dist_code']))
+                $msg = $msg . " Missing District Code,";
+            if (!isset($_POST['possessor_name']) || empty($_POST['possessor_name']))
+                $msg = $msg . " Missing Possessor Name, ";
+            if (!isset($_POST['possessor_guardian_name']) || empty($_POST['possessor_guardian_name']))
+                $msg = $msg . " Missing Possessor Guardian Name, ";
+            if (!isset($_POST['possessor_guardian_relation']) || empty($_POST['possessor_guardian_relation']))
+                $msg = $msg . " Missing Possessor Guardian Relation ";
+            if ($msg != null && !empty($msg)) {
+                $response = [
+                    'status' => 'n',
+                    'msg' => $msg
+                ];
+                $this->output->set_status_header(401);
+                echo json_encode($response);
+                return;
+            }
+            $possessor_u_id = $_POST['possessor_u_id'];
+            $dist_code = $_POST['dist_code'];
+            $possessor_name = $_POST['possessor_name'];
+            $possessor_guardian_name = $_POST['possessor_guardian_name'];
+            $possessor_guardian_relation = $_POST['possessor_guardian_relation'];
+            $possessor_mobile_no = isset($_POST['possessor_mobile_no']) ? $_POST['possessor_mobile_no'] : null;
+            $possessor_mode_of_acquisition = isset($_POST['possessor_mode_of_acquisition']) ? $_POST['possessor_mode_of_acquisition'] : null;
+            $possessor_name_mut = isset($_POST['possessor_name_mut']) ? $_POST['possessor_name_mut'] : null;
+            $possessor_father_name_mut = isset($_POST['possessor_father_name_mut']) ? $_POST['possessor_father_name_mut'] : null;
+            $possessor_address_mut = isset($_POST['possessor_address_mut']) ? $_POST['possessor_address_mut'] : null;
+            $possessor_remark = isset($_POST['possessor_remark']) ? $_POST['possessor_remark'] : null;
+            $possessor_id = isset($_POST['possessor_id']) ? $_POST['possessor_id'] : null;
+            $possessor_gender = isset($_POST['possessor_gender']) ? $_POST['possessor_gender'] : null;
+            $possessor_dob = isset($_POST['possessor_dob']) ? $_POST['possessor_dob'] : null;
+            $possessor_aadhaar = isset($_POST['possessor_aadhaar']) ? $_POST['possessor_aadhaar'] : null;
+            $possessor_email = isset($_POST['possessor_email']) ? $_POST['possessor_email'] : null;
+        }
+        $this->dbswitch($dist_code);
+        $possessor = $this->db->query("select * from splitted_dags_possessors where possessor_u_id=?", [$possessor_u_id])->row();
+        if (!$possessor) {
+            $response = [
+                'status' => 'n',
+                'msg' => 'Invalid Possessor ID!'
+            ];
+            $this->output->set_status_header(500);
+            echo json_encode($response);
+            return;
+        }
+
+        $this->db->trans_begin();
+
+        $updateArr = [
+            'name' => $possessor_name,
+            'guard_name' => $possessor_guardian_name,
+            'guard_relation' => $possessor_guardian_relation,
+            'mode_of_acquisition' => $possessor_mode_of_acquisition,
+            'mut_possessor_name' => $possessor_name_mut,
+            'mut_possessor_father_name' => $possessor_father_name_mut,
+            'mut_possessor_address' => $possessor_address_mut,
+            'remarks' => $possessor_remark,
+            'user_code' => $this->jwt_data->usercode,
+            'gender' => $possessor_gender,
+            'updated_at' => date('Y-m-d H:i:s'),
+            'mobile_no' => $possessor_mobile_no,
+            'aadhaar_no' => $possessor_aadhaar,
+            'email' => $possessor_email
+        ];
+        if ($possessor_dob != null && isset($possessor_dob) && $possessor_dob !== '') {
+            $updateArr['dob'] = date('Y-m-d', strtotime($possessor_dob));
+        }
+        $this->db->where('possessor_u_id', $possessor_u_id);
+        $updateStatus = $this->db->update('splitted_dags_possessors', $updateArr);
+
+        $documents_data = [];
+        $i = 0;
+
+        while (isset($_POST['document_metadata_' . $i])) {
+            $doc_metadata_json = $_POST['document_metadata_' . $i];
+            $doc_metadata = json_decode($doc_metadata_json, true);
+
+            $doc_file_name = null;
+
+            if (isset($_FILES['document_file_' . $i]) && is_uploaded_file($_FILES['document_file_' . $i]['tmp_name'])) {
+                $document_file = $_FILES['document_file_' . $i];
+
+                $upload_path = FCPATH . 'uploads/documents/';
+                if (!is_dir($upload_path)) {
+                    mkdir($upload_path, 0777, true);
+                }
+
+                $ext = pathinfo($document_file['name'], PATHINFO_EXTENSION);
+                $doc_file_name = uniqid('doc_') . '.' . $ext;
+
+                if (move_uploaded_file($document_file['tmp_name'], $upload_path . $doc_file_name)) {
+                    $doc_metadata['file_name'] = $doc_file_name;
+                    $doc_metadata['file_path'] = 'uploads/documents/' . $doc_file_name; // relative path
+                } else {
+                    $doc_metadata['file_name'] = null; // failed upload
+                }
+            } else {
+                $doc_metadata['file_name'] = null;
+            }
+
+            $documents_data[] = $doc_metadata;
+
+            $i++;
+        }
+
+        foreach ($documents_data as $doc) {
+            $insert_data = [
+                'possessor_u_id'   => $possessor_u_id,
+                'document_name'    => $doc['document_name'],
+                'document_no'      => $doc['document_no'],
+                'issuing_authority' => isset($doc['issuing_authority']) ? $doc['issuing_authority'] : null,
+                'issuing_address'  => isset($doc['issuing_address']) ? $doc['issuing_address'] : null,
+                'file_path'        => isset($doc['file_path']) ? $doc['file_path'] : null,
+                'file_type'        => isset($doc['file_type']) ? $doc['file_type'] : null,
+                'file_size'        => isset($doc['file_size']) ? $doc['file_size'] : null,
+            ];
+
+            if($doc['document_issue_date'] != null && isset($doc['document_issue_date']) && $doc['document_issue_date'] !== ''){
+                $insert_data['document_issue_date'] = date('Y-m-d', strtotime($doc['document_issue_date']));
+            } else {
+                // $insert_data['document_issue_date'] = null;
+            }
+
+            $this->db->insert('ownership_documents', $insert_data);
+        }
+
+        if (!$updateStatus || $this->db->affected_rows() < 1) {
+            $this->db->trans_rollback();
+            log_message('error', 'Could not update possessor!');
+            $response = [
+                'status' => 'n',
+                'msg' => 'Could not update possessor!'
+            ];
+            $this->output->set_status_header(500);
+            echo json_encode($response);
+            return;
+        }
+
+        if (!$this->db->trans_status()) {
+            $this->db->trans_rollback();
+            log_message('error', 'DB Transaction Failed!');
+            $response = [
+                'status' => 'n',
+                'msg' => 'DB Transaction Failed!'
+            ];
+            $this->output->set_status_header(500);
+            echo json_encode($response);
+            return;
+        }
+
+        $this->db->trans_commit();
+
+        $response = [
+            'status' => 'y',
+            'msg' => 'Successfully updated possessor!',
+            'possessor' => $this->getPossessorById($possessor_u_id)
+        ];
+        $this->output->set_status_header(200);
+        echo json_encode($response);
+        return;
+    }
+
     public function deletePossessor()
     {
         $this->load->helper('cookie');
