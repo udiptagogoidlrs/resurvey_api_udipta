@@ -1029,7 +1029,7 @@ class PartDagController extends CI_Controller
         if (empty($checkPartDag) || empty($checkChitha)) {
             $response = [
                 'status' => 'n',
-                'msg' => 'Part Dag is not available yet!'
+                'msg' => 'Please create the Part Dag first or check the part dag No!'
             ];
             $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
             echo json_encode($response);
