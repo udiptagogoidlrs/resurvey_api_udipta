@@ -183,16 +183,16 @@ class PartDagController extends CI_Controller
         }
         $entered_total_dag_area = $enteredDagArea * (100 / 747.45);
 
-        if ($enteredDagArea > $remainingDagArea) {
-            log_message('error', 'Part Dag Area cannot be greater than the total remaining dag area. Entered Total Area: ' . $enteredDagArea . ', Total Remaining Dag Area: ' . $remainingDagArea);
-            $response = [
-                'status' => 'n',
-                'msg' => 'Part Dag Area cannot be greater than the total remaining dag area!'
-            ];
-            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
-            echo json_encode($response);
-            return;
-        }
+        // if ($enteredDagArea > $remainingDagArea) {
+        //     log_message('error', 'Part Dag Area cannot be greater than the total remaining dag area. Entered Total Area: ' . $enteredDagArea . ', Total Remaining Dag Area: ' . $remainingDagArea);
+        //     $response = [
+        //         'status' => 'n',
+        //         'msg' => 'Part Dag Area cannot be greater than the total remaining dag area!'
+        //     ];
+        //     $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+        //     echo json_encode($response);
+        //     return;
+        // }
 
         $checkNewDag = $this->PartDagModel->checkExistingDag($dist_code, $subdiv_code, $cir_code, $mouza_pargona_code, $lot_no, $vill_townprt_code, $part_dag);
         if ($checkNewDag['status'] == 'n') {
@@ -367,47 +367,47 @@ class PartDagController extends CI_Controller
         }
 
         //update previous dag area
-        $left_out_area = $remainingDagArea - $enteredDagArea;
-        if (in_array($dist_code, BARAK_VALLEY)) {
-            $updated_area_bigha = floor($left_out_area / 6400);
-            $updated_area_katha = floor(($left_out_area - ($updated_area_bigha * 6400)) / 320);
-            $updated_area_lessa = floor(($left_out_area - ($updated_area_bigha * 6400 + $updated_area_katha * 320)) / 20);
-            $updated_area_ganda = number_format($left_out_area - ($updated_area_bigha * 6400 + $updated_area_katha * 320 + $updated_area_lessa * 20), 2);
-        } else {
-            $updated_area_bigha = floor($left_out_area / 100);
-            $updated_area_katha = floor(($left_out_area - ($updated_area_bigha * 100)) / 20);
-            $updated_area_lessa = number_format($left_out_area - ($updated_area_bigha * 100 + $updated_area_katha * 20), 2);
-            $updated_area_ganda = '0';
-        }
-        $updateChithaPreviousDagArr = [
-            'dag_area_b' => $updated_area_bigha,
-            'dag_area_k' => $updated_area_katha,
-            'dag_area_lc' => $updated_area_lessa,
-            'dag_area_g' => $updated_area_ganda
-        ];
-        $this->db->where([
-            'dist_code' => $dist_code,
-            'subdiv_code' => $subdiv_code,
-            'cir_code' => $cir_code,
-            'mouza_pargona_code' => $mouza_pargona_code,
-            'lot_no' => $lot_no,
-            'vill_townprt_code' => $vill_townprt_code,
-            'dag_no' => $original_dag_no,
-            'patta_no' => $getChithaDetails->patta_no,
-            'patta_type_code' => $getChithaDetails->patta_type_code
-        ]);
-        $updateChithaPreviousDagStatus = $this->db->update('chitha_basic', $updateChithaPreviousDagArr);
-        if (!$updateChithaPreviousDagStatus || $this->db->affected_rows() < 1) {
-            $this->db->trans_rollback();
-            log_message('error', 'Error in updation in chitha_basic for dag_no: ' . $original_dag_no);
-            $response = [
-                'status' => 'n',
-                'msg' => 'Updation Error in Chitha Basic!'
-            ];
-            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
-            echo json_encode($response);
-            return;
-        }
+        // $left_out_area = $remainingDagArea - $enteredDagArea;
+        // if (in_array($dist_code, BARAK_VALLEY)) {
+        //     $updated_area_bigha = floor($left_out_area / 6400);
+        //     $updated_area_katha = floor(($left_out_area - ($updated_area_bigha * 6400)) / 320);
+        //     $updated_area_lessa = floor(($left_out_area - ($updated_area_bigha * 6400 + $updated_area_katha * 320)) / 20);
+        //     $updated_area_ganda = number_format($left_out_area - ($updated_area_bigha * 6400 + $updated_area_katha * 320 + $updated_area_lessa * 20), 2);
+        // } else {
+        //     $updated_area_bigha = floor($left_out_area / 100);
+        //     $updated_area_katha = floor(($left_out_area - ($updated_area_bigha * 100)) / 20);
+        //     $updated_area_lessa = number_format($left_out_area - ($updated_area_bigha * 100 + $updated_area_katha * 20), 2);
+        //     $updated_area_ganda = '0';
+        // }
+        // $updateChithaPreviousDagArr = [
+        //     'dag_area_b' => $updated_area_bigha,
+        //     'dag_area_k' => $updated_area_katha,
+        //     'dag_area_lc' => $updated_area_lessa,
+        //     'dag_area_g' => $updated_area_ganda
+        // ];
+        // $this->db->where([
+        //     'dist_code' => $dist_code,
+        //     'subdiv_code' => $subdiv_code,
+        //     'cir_code' => $cir_code,
+        //     'mouza_pargona_code' => $mouza_pargona_code,
+        //     'lot_no' => $lot_no,
+        //     'vill_townprt_code' => $vill_townprt_code,
+        //     'dag_no' => $original_dag_no,
+        //     'patta_no' => $getChithaDetails->patta_no,
+        //     'patta_type_code' => $getChithaDetails->patta_type_code
+        // ]);
+        // $updateChithaPreviousDagStatus = $this->db->update('chitha_basic', $updateChithaPreviousDagArr);
+        // if (!$updateChithaPreviousDagStatus || $this->db->affected_rows() < 1) {
+        //     $this->db->trans_rollback();
+        //     log_message('error', 'Error in updation in chitha_basic for dag_no: ' . $original_dag_no);
+        //     $response = [
+        //         'status' => 'n',
+        //         'msg' => 'Updation Error in Chitha Basic!'
+        //     ];
+        //     $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+        //     echo json_encode($response);
+        //     return;
+        // }
 
         // 08-01-05-01-01-10002-0-0209-1
 
@@ -1903,16 +1903,16 @@ class PartDagController extends CI_Controller
         }
         $entered_total_dag_area = $enteredDagArea * (100 / 747.45);
 
-        if ($enteredDagArea > $remainingDagArea) {
-            log_message('error', 'Part Dag Area cannot be greater than the total remaining dag area. Entered Total Area: ' . $enteredDagArea . ', Total Remaining Dag Area: ' . $remainingDagArea);
-            $response = [
-                'status' => 'n',
-                'msg' => 'Part Dag Area cannot be greater than the total remaining dag area!'
-            ];
-            $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
-            echo json_encode($response);
-            return;
-        }
+        // if ($enteredDagArea > $remainingDagArea) {
+        //     log_message('error', 'Part Dag Area cannot be greater than the total remaining dag area. Entered Total Area: ' . $enteredDagArea . ', Total Remaining Dag Area: ' . $remainingDagArea);
+        //     $response = [
+        //         'status' => 'n',
+        //         'msg' => 'Part Dag Area cannot be greater than the total remaining dag area!'
+        //     ];
+        //     $this->output->set_status_header(500);  // Change to 400, 401, 500, etc. as needed
+        //     echo json_encode($response);
+        //     return;
+        // }
 
         $this->db->trans_begin();
 
