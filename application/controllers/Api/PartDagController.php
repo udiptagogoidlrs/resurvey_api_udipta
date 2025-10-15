@@ -287,10 +287,10 @@ class PartDagController extends CI_Controller
             'revenue_paid_upto' => $getChithaDetails->revenue_paid_upto ? $getChithaDetails->revenue_paid_upto : '',
             'block_code' => $getChithaDetails->block_code ? $getChithaDetails->block_code : '',
             'gp_code' => $getChithaDetails->gp_code ? $getChithaDetails->gp_code : '',
-            'o_bigha' => $o_bigha,
-            'o_katha' => $o_katha,
-            'o_lessa' => $o_lessa,
-            'o_ganda' => $o_ganda,
+            // 'o_bigha' => $o_bigha,
+            // 'o_katha' => $o_katha,
+            // 'o_lessa' => $o_lessa,
+            // 'o_ganda' => $o_ganda,
             'alpha_dag' => $alpha_dag,
             'dag_area_sqmtr' => $area_sm,
             'bhunaksha_survey_no' => $bhunaksha_survey_no
@@ -2070,7 +2070,7 @@ class PartDagController extends CI_Controller
         }
         //insert into tenants
         if (!empty($tenants) && count($tenants) > 0) {
-            $is_tenant_inserted = $this->insertTenant($tenants, $part_dag, $payload);
+            $is_tenant_inserted = $this->insertTenant($tenants, $part_dag);
             if (!$is_tenant_inserted) {
                 $this->db->trans_rollback();
                 log_message('error', 'Error in inserting tenant: ' . json_encode($tenants));
