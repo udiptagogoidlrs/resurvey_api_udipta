@@ -78,6 +78,7 @@ $route['get-master-data'] = 'Api/ResurveyDataController/getResurveyMasterData';
 $route['get-dag-data'] = 'Api/ResurveyDataController/getResurveyDagData';
 $route['get-survey-no-data'] = 'Api/ResurveyDataController/getSurveyNoData';
 $route['get_chitha_data'] = 'Api/ResurveyDataController/getChithaData';
+$route['get_partdag_data_preview'] = 'Api/LocationController/getPartdagDataPreview';
 
 
 //reports
