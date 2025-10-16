@@ -861,3 +861,24 @@ function callNgdrsApi($endpoint, $method, $jsonData) {
     curl_close($curl);
     return $resp;
 }
+
+function callGetDeed($endpoint, $method) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, DEED_URL . $endpoint);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return response as string
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        // "Authorization: Bearer YOUR_TOKEN",  // if needed
+        "Content-Type: application/json"
+    ]);
+
+    // Execute request
+    $response = curl_exec($ch);
+     if (curl_errno($ch)) {
+        $resp = '';
+    } else {
+        $resp = base64_decode($response);
+    }
+    curl_close($ch);
+    return $resp;
+}

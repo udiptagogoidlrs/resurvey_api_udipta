@@ -441,4 +441,49 @@ class ResurveyDataController extends CI_Controller
         ]);
         return;
     }
+
+    public function getDeed() {
+        $request_data = json_decode(file_get_contents('php://input', true));
+
+        $unique_id = $request_data->unique_id;
+        $dbname = $request_data->dbname;
+        $from_epanjeeyan_ngdrs = $request_data->from_epanjeeyan_ngdrs;
+
+        if($from_epanjeeyan_ngdrs == 'epanjeeyan') {
+            // $deedPdf = calGetDeed('deed/get_deed_view.php?dbname=naharkatia&comcaseno=284/2013', 'GET');
+            $deedPdf = callGetDeed('deed/get_deed_view.php?dbname='. $dbname .'&comcaseno='. $unique_id, 'GET');
+        }
+        else if($from_epanjeeyan_ngdrs == 'ngdrs') {
+            $deedPdf = null;
+        }
+        else {
+            $deedPdf = null;
+        }
+
+        if(!$deedPdf) {
+            echo json_encode([
+                'status' => 'n',
+                'msg' => 'Pdf could not be generated!!'
+            ]);
+            exit;
+        }
+
+        $upload_path = FCPATH . 'uploads/deeds/';
+        if (!is_dir($upload_path)) {
+            mkdir($upload_path, 0777, true);
+        }
+
+        file_put_contents($upload_path . "document.pdf", $deedPdf);
+
+        $file = $upload_path . "document.pdf";
+
+        if (file_exists($file)) {
+            $this->output->set_status_header(200);
+            echo json_encode(['status' => 'y', 'msg' => 'Retrieved File!', 'data' => 'uploads/deeds/document.pdf']);
+        } else {
+            $this->output->set_status_header(404);
+            echo json_encode(['status' => 'n', 'msg' => 'File not found']);
+        }
+        exit;
+    }
 }
