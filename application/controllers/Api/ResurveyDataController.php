@@ -229,21 +229,88 @@ class ResurveyDataController extends CI_Controller
             exit;
         }
 
-        $requestData = [
+        $requestEpanjeeyanData = [
+            // "lgdCode"=> $lgd_code,
+            "district_code" => $dist_code,
+            "subdivision" => $subdiv_code,
+            "circle" => $cir_code,
+            "mouza" => $mouza_pargona_code,
+            "lot" => $lot_no,
+            "village" => $vill_townprt_code,
+            "dagno" => $dag_no
+            // "dagNo" => $dag_no
+        ];
+
+        $requestNgdrsData = [
             "lgdCode"=> $lgd_code,
             "dagNo" => $dag_no
         ];
 
-        $ngdrsResp = callNgdrsApi("v1/search_deed.php", "POST", json_encode($requestData));
-
-        if($ngdrsResp["http_status"] == 200 && isset($ngdrsResp["data"]) && $ngdrsResp["data"]->success == true && isset($ngdrsResp["data"]->data) && !empty($ngdrsResp["data"]->data) && isset($ngdrsResp["data"]->data->data) && !isset($ngdrsResp["data"]->data->data->message)) {
-            $ngdrsData = $ngdrsResp["data"]->data->data;
+        $epanjeeyanResp = callEpanjeeyanApi("Epanjeeyan/fetchRecordsurvey", "POST", $requestEpanjeeyanData);
+        $ngdrsResp = callNgdrsApi("v1/search_deed.php", "POST", json_encode($requestNgdrsData));
+        
+        if($ngdrsResp->success) {
+            $ngdrsData = $ngdrsResp->data;
+            if($ngdrsData->source == 'epanjeeyan') {
+                $dhar_ngdrs_deeds = [];
+            }
+            else if ($ngdrsData->source == 'ngdrs') {
+                if(!empty($ngdrsData->data)) {
+                    $dhar_ngdrs_deeds = $ngdrsData->data;
+                }
+                else {
+                    $dhar_ngdrs_deeds = [];
+                }
+            }
+            else {
+                $dhar_ngdrs_deeds = [];
+            }
         }
         else {
-            $ngdrsData = [];
+            $dhar_ngdrs_deeds = [];
         }
 
-        $response['ngdrs_docs'] = $ngdrsData;
+
+        if($epanjeeyanResp['success'] == 'y' && !empty($epanjeeyanResp['data'])) {
+            $dhar_epanjeeyan_deeds = $epanjeeyanResp['data'];
+        }
+        else {
+            $dhar_epanjeeyan_deeds = [];
+        }
+
+        $api_dhar_deeds = [];
+
+        if(!empty($dhar_epanjeeyan_deeds)) {
+            foreach ($dhar_epanjeeyan_deeds as $deed) {
+                $row_deeds['from_epanjeeyan_ngdrs'] = 'epanjeeyan';
+                $row_deeds['unique_id'] = $deed->fcaseno . ' & ' . $deed->comcaseno;
+                $row_deeds['deed_type'] = $deed->deed_type;
+                $row_deeds['registration_date'] = $deed->dtcomple;
+                $row_deeds['dbname'] = $deed->dbname;
+                $row_deeds['fcaseno'] = $deed->fcaseno;
+                $row_deeds['comcaseno'] = $deed->comcaseno;
+                $row_deeds['dag_no'] = $deed->dagno;
+
+                $api_dhar_deeds[] = $row_deeds;
+            }
+        }
+
+        if(!empty($dhar_ngdrs_deeds)) {
+            foreach ($dhar_ngdrs_deeds as $deed) {
+                $row_deeds['from_epanjeeyan_ngdrs'] = 'ngdrs';
+                $row_deeds['unique_id'] = $deed->documentRegistrationNumber . ' & ' . $deed->id;
+                $row_deeds['deed_type'] = '';
+                $row_deeds['registration_date'] = $deed->documentRegistrationDate;
+                $row_deeds['dbname'] = strtolower($deed->district);
+                $row_deeds['fcaseno'] = $deed->documentRegistrationNumber;
+                $row_deeds['comcaseno'] = $deed->id;
+                $row_deeds['dag_no'] = $deed->dagNo;
+
+                $api_dhar_deeds[] = $row_deeds;
+            }
+        }
+
+        $response['dhar_deeds'] = $api_dhar_deeds;
 
         echo json_encode([
             'status' => 'y',
@@ -373,5 +440,58 @@ class ResurveyDataController extends CI_Controller
             'data' => $data
         ]);
         return;
+    }
+
+    public function getDeed() {
+        $request_data = json_decode(file_get_contents('php://input', true));
+
+        $unique_id = $request_data->unique_id;
+        $dbname = $request_data->dbname;
+        $from_epanjeeyan_ngdrs = $request_data->from_epanjeeyan_ngdrs;
+
+        if($from_epanjeeyan_ngdrs == 'epanjeeyan') {
+            // $deedPdf = calGetDeed('deed/get_deed_view.php?dbname=naharkatia&comcaseno=284/2013', 'GET');
+            $deedPdf = callGetDeed('deed/get_deed_view.php?dbname='. $dbname .'&comcaseno='. $unique_id, 'GET');
+        }
+        else if($from_epanjeeyan_ngdrs == 'ngdrs') {
+            $id = $unique_id;
+            $data = json_encode([
+                'id' => $id
+            ]);
+            $deedResponse = callNgdrsDeed('v1/get_deed.php', 'POST', json_encode($data));
+            if(empty($deedResponse)) {
+                $deedPdf = null;
+            }
+            $deedPdf = base64_decode($deedResponse->base64);
+        }
+        else {
+            $deedPdf = null;
+        }
+
+        if(!$deedPdf) {
+            echo json_encode([
+                'status' => 'n',
+                'msg' => 'Pdf could not be generated!!'
+            ]);
+            exit;
+        }
+
+        $upload_path = FCPATH . 'uploads/deeds/';
+        if (!is_dir($upload_path)) {
+            mkdir($upload_path, 0777, true);
+        }
+
+        file_put_contents($upload_path . "document.pdf", $deedPdf);
+
+        $file = $upload_path . "document.pdf";
+
+        if (file_exists($file)) {
+            $this->output->set_status_header(200);
+            echo json_encode(['status' => 'y', 'msg' => 'Retrieved File!', 'data' => 'uploads/deeds/document.pdf']);
+        } else {
+            $this->output->set_status_header(404);
+            echo json_encode(['status' => 'n', 'msg' => 'File not found']);
+        }
+        exit;
     }
 }

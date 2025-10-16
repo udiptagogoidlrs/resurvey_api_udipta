@@ -96,6 +96,10 @@ $route['get-lm-resurvey-dashboard'] = 'Api/ResurveyReportController/getResurveyL
 $route['add_login_log'] = 'Api/LoginController/addLoginLog';
 $route['singlesign_login'] = 'Api/LoginController/singleSignRedirect';
 
+//deeds
+$route['get_deed'] = 'Api/ResurveyDataController/getDeed';
+
+
 
 
 

@@ -778,12 +778,60 @@ function callLandhubAPIWithHeader($method, $url, $data)
     return $resp;
 }
 
-function callNgdrsApi ($endpoint, $method, $jsonData) {
-    $base_url = NGDRS_BASE_URL;
+function callEpanjeeyanApi ($endpoint, $method, $jsonData) {
+    $base_url = EPANJEEYAN_BASE_URL;
     $apikey = NGDRS_API_KEY;
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => $base_url . $endpoint,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_POSTFIELDS => http_build_query($jsonData),
+        CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/x-www-form-urlencoded'
+        ),
+    ));
+    $response = curl_exec($curl);
+
+    if(!$response) {
+        if(curl_errno($curl)) {
+            return [
+                'success' => 'n',
+                'error' => curl_error($curl),
+                'data' => ''
+            ];
+        }
+        else {
+            return [
+                'success' => 'n',
+                'error' => 'API Error!',
+                'data' => ''
+            ];
+        }
+    }
+    curl_close($curl);
+
+    return [
+        'success' => 'y',
+        'error' => '',
+        'data' =>  json_decode($response)
+    ];
+}
+
+function callNgdrsApi($endpoint, $method, $jsonData) {
+    $base_url = NGDRS_BASE_URL;
+    $apikey = NGDRS_API_KEY;
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL =>  $base_url . $endpoint,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST =>  true,
         CURLOPT_ENCODING => '',
@@ -799,24 +847,73 @@ function callNgdrsApi ($endpoint, $method, $jsonData) {
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
             'Content-Length: ' . strlen($jsonData),
-            'X-Api-Key: ' . $apikey
+            'X-Api-Key:' . $apikey
         ),
     ));
 
     $response = curl_exec($curl);
     $resp = [];
     if (curl_errno($curl)) {
-        $resp = [
-            'error' => curl_error($curl),
-            'http_status' => curl_getinfo($curl, CURLINFO_HTTP_CODE),
-            'data' => ''
-        ];
+        $resp = [];
     } else {
-        $resp = [
-            'error' => '',
-            'http_status' => curl_getinfo($curl, CURLINFO_HTTP_CODE),
-            'data' => json_decode($response)
-        ];
+        $resp = json_decode($response);
+    }
+    curl_close($curl);
+    return $resp;
+}
+
+function callGetDeed($endpoint, $method) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, DEED_URL . $endpoint);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return response as string
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        // "Authorization: Bearer YOUR_TOKEN",  // if needed
+        "Content-Type: application/json"
+    ]);
+
+    // Execute request
+    $response = curl_exec($ch);
+     if (curl_errno($ch)) {
+        $resp = '';
+    } else {
+        $resp = base64_decode($response);
+    }
+    curl_close($ch);
+    return $resp;
+}
+
+function callNgdrsDeed($endpoint, $method, $jsonData) {
+    $base_url = NGDRS_BASE_URL;
+    $apikey = NGDRS_API_KEY;
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL =>  $base_url . $endpoint,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST =>  true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        // CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_POSTFIELDS => $jsonData,
+        CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($jsonData),
+            'X-Api-Key:' . $apikey
+        ),
+    ));
+
+    $response = curl_exec($curl);
+    $resp = [];
+    if (curl_errno($curl)) {
+        $resp = [];
+    } else {
+        $resp = json_decode($response);
     }
     curl_close($curl);
     return $resp;
