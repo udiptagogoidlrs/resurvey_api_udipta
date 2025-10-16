@@ -882,3 +882,39 @@ function callGetDeed($endpoint, $method) {
     curl_close($ch);
     return $resp;
 }
+
+function callNgdrsDeed($endpoint, $method, $jsonData) {
+    $base_url = NGDRS_BASE_URL;
+    $apikey = NGDRS_API_KEY;
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL =>  $base_url . $endpoint,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST =>  true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        // CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_POSTFIELDS => $jsonData,
+        CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($jsonData),
+            'X-Api-Key:' . $apikey
+        ),
+    ));
+
+    $response = curl_exec($curl);
+    $resp = [];
+    if (curl_errno($curl)) {
+        $resp = [];
+    } else {
+        $resp = json_decode($response);
+    }
+    curl_close($curl);
+    return $resp;
+}

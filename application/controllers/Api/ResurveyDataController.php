@@ -454,7 +454,15 @@ class ResurveyDataController extends CI_Controller
             $deedPdf = callGetDeed('deed/get_deed_view.php?dbname='. $dbname .'&comcaseno='. $unique_id, 'GET');
         }
         else if($from_epanjeeyan_ngdrs == 'ngdrs') {
-            $deedPdf = null;
+            $id = $unique_id;
+            $data = json_encode([
+                'id' => $id
+            ]);
+            $deedResponse = callNgdrsDeed('v1/get_deed.php', 'POST', json_encode($data));
+            if(empty($deedResponse)) {
+                $deedPdf = null;
+            }
+            $deedPdf = base64_decode($deedResponse->base64);
         }
         else {
             $deedPdf = null;
