@@ -1,4 +1,4 @@
-1.new tables - chitha_basic_splitted_dags,resurvey_villages,splitted_dags_possessors
+1.new tables - chitha_basic_splitted_dags,splitted_dags_possessors,ownership_documents
 
 
 add these cols to chitha_tenant.

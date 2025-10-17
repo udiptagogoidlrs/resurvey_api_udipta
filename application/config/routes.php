@@ -84,6 +84,7 @@ $route['get_partdag_data_preview'] = 'Api/LocationController/getPartdagDataPrevi
 //reports
 $route['get-resurvey-report'] = 'Api/ResurveyReportController/getResurveyReportData';
 $route['get-district-report'] = 'Api/ResurveyReportController/getResurveyReportDistData';
+$route['get-report'] = 'Api/ResurveyReportController/getResurveyReport';
 //co routes
 $route['get-circle-resurvey-report'] = 'Api/ResurveyReportController/getResurveyReportCoData';
 $route['get-circle-resurvey-dashboard'] = 'Api/ResurveyReportController/getResurveyCoDashData';
